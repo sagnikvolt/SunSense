@@ -143,6 +143,8 @@ PVGIS isn't hit twice.
 git clone https://github.com/sagnikvolt/SunSense && cd SunSense && bash deploy.sh
 ```
 
+**Live API:** `https://lzgu0g309j.execute-api.ap-south-1.amazonaws.com` (stack `sunsense`, ap-south-1). Deployed 8 Oct 2026 via the CloudFormation console from the same template (code zip in a private S3 bucket), because CloudShell was still locked on the brand-new account.
+
 `deploy.sh` validates and deploys `template.yaml` with the AWS SAM CLI, prints the `ApiUrl` and runs a
 smoke test. Paste the `ApiUrl` into `LIVE_API` in `frontend/app.html` and rebuild `index.html`.
 
