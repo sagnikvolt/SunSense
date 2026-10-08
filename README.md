@@ -215,5 +215,6 @@ Copyright © 2026 Sagnik Kumar Nath. **All rights reserved.** The code is public
 - [CesiumJS](https://cesium.com/platform/cesiumjs/) (Apache-2.0) and Google Photorealistic 3D Tiles via Cesium ion
 - [PVGIS](https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en) API and geospatial data © European Union, 2001–2026 (CC BY 4.0)
 - [NASA POWER](https://power.larc.nasa.gov/) solar data
+- Search suggestions: [Photon](https://photon.komoot.io) by komoot, data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL)
 - Pincode coordinates from [pincode-lat-long](https://www.npmjs.com/package/pincode-lat-long) (ISC)
 - AI coding assistance: Claude (Anthropic)
