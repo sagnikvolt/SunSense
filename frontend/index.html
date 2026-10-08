@@ -128,7 +128,8 @@ details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
   font:500 18px var(--f-mono);cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .zoomctl button:hover,.search button:hover{filter:brightness(1.1)}
 #globe .cesium-viewer,#globe .cesium-widget{width:100%;height:100%}
-#globe .cesium-viewer-bottom{left:auto;right:12px;bottom:auto;top:12px;margin-right:52px;max-width:60%}
+#globe .cesium-viewer-bottom{left:12px;right:auto;bottom:auto;top:10px;max-width:calc(100% - 80px);font-size:9px;line-height:1.3;opacity:.85}
+#globe .cesium-credit-textContainer{font-size:9px}
 #globe .cesium-credit-logoContainer img{max-height:18px}
 .stage .loading{pointer-events:none;position:absolute;inset:0;display:grid;place-items:center;font:500 13px var(--f-mono);color:var(--sp-muted)}
 
@@ -351,28 +352,30 @@ const pinsReady=fetch("assets/pincodes.csv").then(r=>r.text()).then(t=>{
 
 async function geocode(q){
   q=q.trim();
-  if(/^\d{6}$/.test(q)){
+  const isPin=/^\d{6}$/.test(q);
+  if(!isPin && q.length<3) throw new Error("Type a 6-digit pincode or an address.");
+  // With Google 3D tiles on screen, Google's terms require Google's geocoder (via Cesium ion).
+  let v=null; try{ v=await cesiumReady; }catch{}
+  if(v){
+    try{
+      const hits=await new Cesium.IonGeocoderService({scene:v.scene,geocodeProviderType:Cesium.IonGeocodeProviderType.GOOGLE})
+        .geocode(isPin?`${q}, India`:`${q}, India`);
+      if(hits.length){
+        const d=hits[0].destination;
+        const c=d instanceof Cesium.Rectangle ? Cesium.Rectangle.center(d) : Cesium.Cartographic.fromCartesian(d);
+        return {lat:Cesium.Math.toDegrees(c.latitude),lng:Cesium.Math.toDegrees(c.longitude),
+                label:hits[0].displayName.split(",").slice(0,3).join(","),pincode:isPin?q:null};
+      }
+      if(!isPin) throw new Error(`Couldn't find "${q}". Try adding the town or district.`);
+    }catch(e){ if(!isPin) throw e; }
+  }
+  // Backup: bundled pincode table (works offline and when the 3D globe can't load)
+  if(isPin){
     await pinsReady; const hit=PINS.get(q);
     if(!hit) throw new Error(`Pincode ${q} isn't in our list. Try a nearby pincode or an address.`);
     return {lat:hit[0],lng:hit[1],label:`Pincode ${q}`,pincode:q};
   }
-  if(q.length<3) throw new Error("Type a 6-digit pincode or an address.");
-  // Address: Cesium ion geocoder (uses the same token), then OpenStreetMap as backup
-  try{
-    const v=await cesiumReady;
-    const hits=await new Cesium.IonGeocoderService({scene:v.scene}).geocode(q+", India");
-    if(hits.length){
-      const d=hits[0].destination;
-      const c=d instanceof Cesium.Rectangle ? Cesium.Rectangle.center(d) : Cesium.Cartographic.fromCartesian(d);
-      return {lat:Cesium.Math.toDegrees(c.latitude),lng:Cesium.Math.toDegrees(c.longitude),
-              label:hits[0].displayName.split(",").slice(0,3).join(","),pincode:null};
-    }
-  }catch(e){ /* fall through */ }
-  const url="https://nominatim.openstreetmap.org/search?"+new URLSearchParams({q,countrycodes:"in",format:"json",limit:"1"});
-  let res; try{ res=await fetch(url,{headers:{"Accept-Language":"en"}}); }
-  catch{ throw new Error("Address search isn't available here. Use a pincode."); }
-  const d=await res.json(); if(!d.length) throw new Error(`Couldn't find "${q}". Try adding the town or district.`);
-  return {lat:+d[0].lat,lng:+d[0].lon,label:d[0].display_name.split(",").slice(0,3).join(","),pincode:null};
+  throw new Error("Address search needs the 3D globe. Use a pincode for now.");
 }
 
 // ---------- 3D globe: CesiumJS + Google Photorealistic 3D Tiles ----------
@@ -389,7 +392,7 @@ const cesiumReady=(async()=>{
     infoBox:false,selectionIndicator:false});
   v.scene.skyAtmosphere.show=true;
   v.scene.screenSpaceCameraController.enableCollisionDetection=false;
-  const tiles=await Cesium.createGooglePhotorealistic3DTileset(undefined,{showCreditsOnScreen:true});
+  const tiles=await Cesium.createGooglePhotorealistic3DTileset({onlyUsingWithGoogleGeocoder:true},{showCreditsOnScreen:true});
   v.scene.primitives.add(tiles);
   // slow spin while idle and far out
   v.clock.onTick.addEventListener(()=>{
@@ -411,18 +414,21 @@ function flyTo(lat,lng,tag){
   if(!viewer) return;
   spinning=false;
   viewer.entities.removeAll();
-  viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(lng,lat,0),
+  const pin=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(lng,lat,0),
     point:{pixelSize:13,color:Cesium.Color.fromCssColorString("#ffbe2e"),outlineColor:Cesium.Color.WHITE,outlineWidth:2,
-      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+      disableDepthTestDistance:Number.POSITIVE_INFINITY},
     label:{text:tag,font:"600 13px 'Source Sans 3', sans-serif",fillColor:Cesium.Color.fromCssColorString("#1a1200"),showBackground:true,
       backgroundColor:Cesium.Color.fromCssColorString("#ffbe2e"),backgroundPadding:new Cesium.Cartesian2(8,4),
-      pixelOffset:new Cesium.Cartesian2(0,-24),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      pixelOffset:new Cesium.Cartesian2(0,-24),
       disableDepthTestDistance:Number.POSITIVE_INFINITY}});
-  // end 700 m up, looking north at 38° down, so the pin sits in the middle of the view
-  const back=el.clientWidth<600?0.0068:0.0081;
+  // end 700 m up, looking north at 38° down. The view centre lands ~0.0081° north of the camera;
+  // placing the camera a bit further back puts the pin above centre, clear of the search box.
+  const back=el.clientWidth<600?0.0112:0.0094;
   viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,700),
     orientation:{heading:0,pitch:Cesium.Math.toRadians(-38),roll:0},
-    duration:reduce?0:5.5, maximumHeight:2.5e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT});
+    duration:reduce?0:5.5, maximumHeight:2.5e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT,
+    complete:()=>{ viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.fromDegrees(lng,lat,0)])
+      .then(([p])=>{ if(p) pin.position=p; }).catch(()=>{}); }});
 }
 
 function zoomBy(f){ if(!viewer) return; spinning=false; const h=viewer.camera.positionCartographic.height; f<1?viewer.camera.zoomIn(h*(1-f)):viewer.camera.zoomOut(h*(f-1)); }
