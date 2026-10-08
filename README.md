@@ -108,22 +108,43 @@ Known v1 limits: off-grid battery cost isn't modelled yet, and there's no shadin
 
 ---
 
-## Architecture
+## Architecture — where AWS fits
 
 ```
-[ Frontend: HTML/React on AWS Amplify ]
-              │  POST /calculate (JSON)
-              ▼
-      [ Amazon API Gateway ]
-              │
-              ▼
-   [ AWS Lambda — Python: calculate() ]
-              │  cache hit?  ──►  [ Amazon S3: irradiance cache by lat/lon ]
-              │  cache miss  ──►  PVGIS / NASA POWER API → write to S3
+ Browser (GitHub Pages)                     AWS  ·  ap-south-1 (Mumbai)
+ ┌──────────────────────────┐   POST JSON   ┌──────────────────────────────┐
+ │ 3D globe (Cesium)        │ ────────────► │ Amazon API Gateway (HTTP API)│
+ │ calculator + results UI  │               │  /calculate   /pvgis         │
+ │ Solar lab (7 PVGIS tools)│ ◄──────────── │  throttled 10 req/s, CORS    │
+ └──────────────────────────┘               └──────────────┬───────────────┘
+                                                           ▼
+                                            ┌──────────────────────────────┐
+                                            │ AWS Lambda (Python 3.12, arm)│
+                                            │ validate → calculate() →     │
+                                            │ PVGIS simulation             │
+                                            └───────┬──────────────┬───────┘
+                                       cache hit    ▼              ▼  cache miss
+                                  ┌────────────────────┐   PVGIS (EU JRC) /
+                                  │ Amazon S3 (private,│   NASA POWER APIs
+                                  │ encrypted cache)   │   → stored in S3
+                                  └────────────────────┘
+          Logs: Amazon CloudWatch (14 days) · Infra as code: AWS SAM (template.yaml)
 ```
 
-- **Region:** Asia Pacific (Mumbai) `ap-south-1`
-- **Data:** PVGIS (EU JRC) and NASA POWER for solar irradiance/peak sun hours, cached in S3 so repeat lookups are instant and free
+Why AWS is needed: PVGIS — the EU's solar simulation service — does not allow calls from a web
+browser, so the detailed simulation (monthly generation, best tilt/azimuth, losses, cost per unit,
+off-grid battery) and the Solar lab must run on a server. Lambda does that on demand for free-tier
+cost, API Gateway exposes it safely, and S3 caches every location so repeat lookups are instant and
+PVGIS isn't hit twice.
+
+### Deploy (≈ 3 minutes, from AWS CloudShell in ap-south-1)
+
+```bash
+git clone https://github.com/sagnikvolt/SunSense && cd SunSense && bash deploy.sh
+```
+
+`deploy.sh` validates and deploys `template.yaml` with the AWS SAM CLI, prints the `ApiUrl` and runs a
+smoke test. Paste the `ApiUrl` into `LIVE_API` in `frontend/app.html` and rebuild `index.html`.
 
 ---
 
@@ -157,7 +178,7 @@ Known v1 limits: off-grid battery cost isn't modelled yet, and there's no shadin
 - S3 cache: private, encrypted, TLS-only, objects expire after a year; Lambda can only get/put cache objects. Logs kept 14 days.
 - `backend/tests/test_security.py` fuzzes the API with 3,000 junk payloads; it must never return a 500.
 
-## Repo layout (planned)
+## Repo layout
 
 ```
 sunsense/
@@ -176,7 +197,7 @@ sunsense/
 
 ```bash
 python backend/dev_server.py          # page + API (incl. PVGIS) at http://localhost:8000
-cd backend && python -m pytest -q     # 71 tests
+cd backend && python -m pytest -q     # 90 tests
 ```
 
 The dev server serves `frontend/` and runs the Lambda handler at `POST /api/calculate`, so the
