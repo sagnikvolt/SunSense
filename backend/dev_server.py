@@ -2,7 +2,7 @@
 Local development server: serves ../frontend and runs the Lambda handler at POST /api/calculate,
 so the full app (including PVGIS) works on your laptop before AWS is set up.
 
-    python backend/dev_server.py            → http://localhost:8000
+    python backend/dev_server.py            -> http://localhost:8000
 
 Binds to 127.0.0.1 only (not reachable from other devices).
 """
@@ -59,7 +59,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), partial(Handler, directory=FRONTEND))
-    print(f"SunSense dev server → http://localhost:{PORT}  (API at /api/calculate, Ctrl+C to stop)")
+    print(f"SunSense dev server: http://localhost:{PORT}  (API at /api/calculate, Ctrl+C to stop)")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

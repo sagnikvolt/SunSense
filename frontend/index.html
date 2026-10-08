@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-qw3vgpuCoYOx7b8m1OjXh7qNjS8WTNzuxuROJaevVe8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-kr6K7Uytuqwra8x8EDMw95gqlaBGeARuHyXfazPixFo='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -896,7 +896,7 @@ function renderPV(){
   $("pv-lcoe").textContent = p.lcoe_per_kwh!=null ? `Your solar electricity works out to about ₹${p.lcoe_per_kwh.toFixed(2)} per unit over 25 years (before subsidy), against ₹${(i.units>200?7.15:5.85).toFixed(2)} for your top grid units.` : "";
   const og=pv.offgrid; $("pv-og").hidden=!(type==="off-grid"&&og);
   if(og){ $("pv-batt").value=og.battery_kwh;
-    $("pv-og-text").textContent=`With a ${og.battery_kwh} kWh battery and ${og.daily_use_kwh} kWh used a day, the battery fills up on ${og.days_full_pct}% of days. On average about ${og.shortfall_kwh_per_day} kWh a day still has to come from elsewhere (mostly monsoon evenings), and ${og.unused_kwh_per_day} kWh a day of sunshine goes unused.`; }
+    $("pv-og-text").textContent=`With ${/^8|^11|^18/.test(String(og.battery_kwh))?"an":"a"} ${og.battery_kwh} kWh battery and ${og.daily_use_kwh} kWh used a day, the battery fills up on ${og.days_full_pct}% of days. On average about ${og.shortfall_kwh_per_day} kWh a day still has to come from elsewhere (mostly monsoon evenings), and ${og.unused_kwh_per_day} kWh a day of sunshine goes unused.`; }
 }
 $("pv-tilt").addEventListener("input",()=>{ $("pv-tilt-o").textContent=$("pv-tilt").value+"°"; });
 $("pv-tilt").addEventListener("change",()=>{ pvTilt=+$("pv-tilt").value; pvAz=+$("pv-face").value; scheduleDetail(); });
