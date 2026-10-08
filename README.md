@@ -76,11 +76,11 @@ All the maths lives in one tested Python function, `backend/calculator.py → ca
 | **Generation** | `kWp × peak_sun_hours × 365 × 0.8` (replaced by the PVGIS result when available) |
 | **Gross cost** | `kWp × ₹55,000` |
 | **Subsidy** (on-grid) | ₹30,000/kW for the first 2 kW + ₹18,000 for the 3rd kW, capped at ₹78,000 |
-| **Savings** | bill before − bill after, on WBSEDCL domestic slabs (net metering) |
+| **Savings** | bill before − bill after on your state's tariff (net metering; fixed charge stays) |
 | **Payback** | `net cost ÷ yearly savings` |
 | **CO₂ avoided** | `yearly kWh × 0.82 kg` (CEA grid emission factor) |
 
-WBSEDCL domestic slabs: ₹3.15 / 4.25 / 5.85 / 7.15 / 8.25 per unit for 0–75 / 76–125 / 126–200 / 201–400 / 400+ units. Location, sunshine, sizing and subsidy work for all of India. **Bill savings currently use West Bengal (WBSEDCL) tariffs.** Other states' tariffs are the next step.
+**State tariffs:** `frontend/assets/tariffs.json` holds the latest domestic tariff (energy slabs + fixed charge) for 33 of 36 states/UTs, read from each regulator's or DISCOM's tariff order (FY 2025-26 / 2026-27, source link per state). The board is picked automatically from the searched location and can be changed; for the 3 without a readable order (Mizoram, Ladakh, DNH&DD) users enter their own ₹/unit. PM Surya Ghar's 10% higher subsidy for North-East/hill states and islands is applied. The **Grid vs solar** card compares 25 years of spending with bills rising by a chosen % a year, 0.5%/yr panel ageing and 1%/yr upkeep.
 
 **Worked example:** Kolkata 700089, 250 units/month, 30 m² roof, on-grid gives 2.3 kWp, ₹61,100 after subsidy, bill ₹1,245 → ₹0, payback about 4 years, 2.5 t CO₂ avoided a year. The PVGIS simulation gives 3,261 kWh/yr at the best tilt of 28°.
 
