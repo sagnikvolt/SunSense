@@ -111,6 +111,63 @@ def _add_pvgis(result, location, units, system_type, tilt, azimuth, battery):
         result["pvgis_note"] = "Detailed simulation unavailable right now; showing the quick estimate."
 
 
+def _choice(body, key, options, default):
+    v = body.get(key, default)
+    if v not in options:
+        raise BadRequest(f"{key} must be one of: {', '.join(map(str, options))}")
+    return v
+
+
+def _flag(body, key, default=False):
+    v = body.get(key, default)
+    if not isinstance(v, bool):
+        raise BadRequest(f"{key} must be true or false")
+    return v
+
+
+def _int(body, key, lo, hi, default):
+    v = _num(body, key, lo, hi)
+    return int(round(default if v is None else v))
+
+
+def _lab(body: dict) -> dict:
+    """Validate a Solar-lab request and run the matching PVGIS tool."""
+    tool = _choice(body, "tool", ("grid", "tracking", "offgrid", "monthly", "daily", "hourly", "tmy"), None)
+    lat = _num(body, "lat", *INDIA["lat"], required=True)
+    lon = _num(body, "lon", *INDIA["lon"], required=True)
+    p = {}
+    if tool in ("grid", "tracking", "hourly"):
+        p["kwp"] = _num(body, "kwp", 0.1, 1000) or 1.0
+        p["loss"] = _num(body, "loss", 0, 50)
+        p["loss"] = 14.0 if p["loss"] is None else p["loss"]
+    if tool in ("grid", "offgrid", "daily", "hourly"):
+        p["slope"] = _int(body, "slope", 0, 90, 28)
+        p["azimuth"] = _int(body, "azimuth", -180, 180, 0)
+    if tool == "grid":
+        p["tech"] = _choice(body, "tech", tuple(sorted(pvgis.TECH)), "crystSi")
+        p["mounting"] = _choice(body, "mounting", ("free", "building"), "free")
+        p["optimize"] = _choice(body, "optimize", ("none", "slope", "both"), "both")
+        cost = _num(body, "cost", 0, 1e9)
+        if cost:
+            p.update(cost=round(cost), interest=_num(body, "interest", 0, 30) or 0, lifetime=_int(body, "lifetime", 1, 50, 25))
+    elif tool == "tracking":
+        p.update(inclined=_flag(body, "inclined", True), vertical=_flag(body, "vertical", True), twoaxis=_flag(body, "twoaxis", True))
+        if not (p["inclined"] or p["vertical"] or p["twoaxis"]):
+            raise BadRequest("pick at least one tracking type")
+    elif tool == "offgrid":
+        p.update(wp=_int(body, "wp", 10, 1_000_000, 2000), battery_wh=_int(body, "battery_wh", 100, 1_000_000, 8000),
+                 cutoff=_int(body, "cutoff", 10, 90, 40), consumption_wh=_int(body, "consumption_wh", 10, 1_000_000, 8000))
+    elif tool == "monthly":
+        p.update(start=_int(body, "start", 2005, 2023, 2005), end=_int(body, "end", 2005, 2023, 2023))
+        if p["start"] > p["end"]:
+            raise BadRequest("start year must not be after end year")
+    elif tool == "daily":
+        p["month"] = _int(body, "month", 1, 12, 4)
+    elif tool == "hourly":
+        p["year"] = _int(body, "year", 2005, 2023, 2023)
+    return pvgis.lab(tool, lat, lon, p)
+
+
 def _origin(event: dict) -> str | None:
     h = event.get("headers") or {}
     return h.get("origin") or h.get("Origin")
@@ -140,6 +197,15 @@ def lambda_handler(event, context=None):
             raise BadRequest("body must be JSON")
         if not isinstance(body, dict):
             raise BadRequest("body must be a JSON object")
+        path = event.get("rawPath") or event.get("path") or "/calculate"
+        if path.rstrip("/").endswith("/pvgis"):
+            try:
+                return _resp(200, _lab(body), origin)
+            except (BadRequest, ValueError) as e:
+                return _resp(400, {"error": str(e)[:200]}, origin)
+            except Exception as e:  # noqa: BLE001 — PVGIS down / slow
+                print(f"PVGIS lab error {type(e).__name__}")
+                return _resp(502, {"error": "PVGIS isn't responding right now. Try again in a minute."}, origin)
 
         units = _num(body, "monthly_units", 0, MAX_UNITS)
         bill = _num(body, "monthly_bill", 0, MAX_BILL)

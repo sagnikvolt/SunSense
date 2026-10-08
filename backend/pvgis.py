@@ -117,3 +117,118 @@ def shscalc(lat: float, lon: float, kw: float, battery_kwh: float, daily_kwh: fl
     }
     cache_put(key, res)
     return res
+
+
+# ---------------------------------------------------------------------------
+# "Solar lab": the seven PVGIS tools, normalised to compact JSON for the browser
+# ---------------------------------------------------------------------------
+
+TECH = {"crystSi", "CIS", "CdTe", "Unknown"}
+
+
+def _fixed_block(mounting: dict, key: str = "fixed") -> dict:
+    m = (mounting or {}).get(key) or {}
+    s, a = m.get("slope") or {}, m.get("azimuth") or {}
+    return {"slope": _f(s.get("value")), "azimuth": _f(a.get("value")), "slope_optimal": s.get("optimal") is True,
+            "azimuth_optimal": a.get("optimal") is True}
+
+
+def _totals(t: dict) -> dict:
+    return {k: _f((t or {}).get(src)) for k, src in (
+        ("E_y", "E_y"), ("E_d", "E_d"), ("H_y", "H(i)_y"), ("SD_y", "SD_y"), ("loss_angle", "l_aoi"),
+        ("loss_spectral", "l_spec"), ("loss_temp", "l_tg"), ("loss_total", "l_total"), ("lcoe", "LCOE_pv"))}
+
+
+def _monthly_rows(rows) -> list:
+    return [{"month": int(_f(r.get("month")) or 0), "E_m": _f(r.get("E_m")), "H_m": _f(r.get("H(i)_m")), "SD_m": _f(r.get("SD_m"))}
+            for r in rows or []]
+
+
+def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
+    """p has already been validated by the handler. Returns {"tool", "inputs", ...tool-specific data}."""
+    base = {"lat": round(lat, 4), "lon": round(lon, 4), "outputformat": "json"}
+    if tool == "grid":
+        q = {**base, "peakpower": p["kwp"], "loss": p["loss"], "pvtechchoice": p["tech"], "mountingplace": p["mounting"]}
+        if p["optimize"] == "both":
+            q["optimalangles"] = 1
+        elif p["optimize"] == "slope":
+            q.update({"optimalinclination": 1, "aspect": p["azimuth"]})
+        else:
+            q.update({"angle": p["slope"], "aspect": p["azimuth"]})
+        if p.get("cost"):
+            q.update({"pvprice": 1, "systemcost": p["cost"], "interest": p["interest"], "lifetime": p["lifetime"]})
+        api = "PVcalc"
+    elif tool == "tracking":
+        q = {**base, "peakpower": p["kwp"], "loss": p["loss"], "fixed": 1, "optimalangles": 1}
+        if p["inclined"]: q.update({"inclined_axis": 1, "inclined_optimum": 1})
+        if p["vertical"]: q.update({"vertical_axis": 1, "vertical_optimum": 1})
+        if p["twoaxis"]: q["twoaxis"] = 1
+        api = "PVcalc"
+    elif tool == "offgrid":
+        q = {**base, "peakpower": p["wp"], "batterysize": p["battery_wh"], "cutoff": p["cutoff"],
+             "consumptionday": p["consumption_wh"], "angle": p["slope"], "aspect": p["azimuth"]}
+        api = "SHScalc"
+    elif tool == "monthly":
+        q = {**base, "startyear": p["start"], "endyear": p["end"], "horirrad": 1, "optrad": 1, "avtemp": 1}
+        api = "MRcalc"
+    elif tool == "daily":
+        q = {**base, "month": p["month"], "angle": p["slope"], "aspect": p["azimuth"], "global": 1, "showtemperatures": 1, "localtime": 1}
+        api = "DRcalc"
+    elif tool == "hourly":
+        q = {**base, "startyear": p["year"], "endyear": p["year"], "pvcalculation": 1, "peakpower": p["kwp"],
+             "loss": p["loss"], "angle": p["slope"], "aspect": p["azimuth"]}
+        api = "seriescalc"
+    elif tool == "tmy":
+        q = dict(base)
+        api = "tmy"
+    else:
+        raise ValueError("unknown tool")
+
+    key = f"pvgis/lab/{api}/" + urllib.parse.urlencode(sorted(q.items())) + ".json"
+    if (hit := cache_get(key)):
+        return hit
+    d = _get_json(BASE + api + "?" + urllib.parse.urlencode(q))
+    inp, out = d.get("inputs") or {}, d.get("outputs") or {}
+    loc = inp.get("location") or {}
+    res = {"tool": tool, "source": "PVGIS 5.3 (EU JRC)", "elevation_m": _f(loc.get("elevation")),
+           "radiation_db": (inp.get("meteo_data") or {}).get("radiation_db"),
+           "years": [(inp.get("meteo_data") or {}).get("year_min"), (inp.get("meteo_data") or {}).get("year_max")]}
+
+    if tool == "grid":
+        res.update(mount=_fixed_block(inp.get("mounting_system")), monthly=_monthly_rows((out.get("monthly") or {}).get("fixed")),
+                   totals=_totals((out.get("totals") or {}).get("fixed")), kwp=p["kwp"])
+    elif tool == "tracking":
+        systems = {}
+        for k, v in (out.get("monthly") or {}).items():
+            systems[k] = {"mount": _fixed_block(inp.get("mounting_system"), k), "monthly": _monthly_rows(v),
+                          "totals": _totals((out.get("totals") or {}).get(k))}
+        res.update(systems=systems, kwp=p["kwp"])
+    elif tool == "offgrid":
+        t = out.get("totals") or {}
+        res.update(monthly=[{"month": int(_f(r.get("month")) or 0), "E_d_kwh": _round((_f(r.get("E_d")) or 0) / 1000, 2),
+                             "lost_d_kwh": _round((_f(r.get("E_lost_d")) or 0) / 1000, 2), "f_f": _f(r.get("f_f")), "f_e": _f(r.get("f_e"))}
+                            for r in out.get("monthly") or []],
+                   totals={"days": _f(t.get("d_total")), "f_f": _f(t.get("f_f")), "f_e": _f(t.get("f_e")),
+                           "lost_kwh_day": _round((_f(t.get("E_lost")) or 0) / 1000, 2), "miss_kwh_day": _round((_f(t.get("E_miss")) or 0) / 1000, 2)},
+                   histogram=[{"from": _f(h.get("CS_min")), "to": _f(h.get("CS_max")), "pct": _f(h.get("f_CS"))} for h in out.get("histogram") or []])
+    elif tool == "monthly":
+        opt = ((inp.get("plane") or {}).get("fixed_inclined_optimal") or {}).get("slope") or {}
+        res.update(optimal_slope=_f(opt.get("value")),
+                   rows=[{"year": int(_f(r.get("year")) or 0), "month": int(_f(r.get("month")) or 0), "H_h": _f(r.get("H(h)_m")),
+                          "H_opt": _f(r.get("H(i_opt)_m")), "T": _f(r.get("T2m"))} for r in out.get("monthly") or []])
+    elif tool == "daily":
+        res.update(rows=[{"time": str(r.get("time"))[:5], "G": _f(r.get("G(i)")), "Gb": _f(r.get("Gb(i)")), "Gd": _f(r.get("Gd(i)")),
+                          "T": _f(r.get("T2m"))} for r in out.get("daily_profile") or []], month=p["month"])
+    elif tool == "hourly":
+        rows = out.get("hourly") or []
+        res.update(year=p["year"], first=str(rows[0].get("time")) if rows else None,
+                   P=[round(_f(r.get("P")) or 0) for r in rows], G=[round(_f(r.get("G(i)")) or 0) for r in rows],
+                   T=[_round(_f(r.get("T2m")), 1) for r in rows], WS=[_round(_f(r.get("WS10m")), 1) for r in rows])
+    elif tool == "tmy":
+        rows = out.get("tmy_hourly") or []
+        col = lambda k, n=1: [_round(_f(r.get(k)), n) for r in rows]  # noqa: E731
+        res.update(months_selected=out.get("months_selected") or [], first=str(rows[0].get("time(UTC)")) if rows else None,
+                   T=col("T2m"), RH=col("RH", 0), GHI=col("G(h)", 0), DNI=col("Gb(n)", 0), DHI=col("Gd(h)", 0),
+                   IR=col("IR(h)", 0), WS=col("WS10m"), WD=col("WD10m", 0), SP=col("SP", 0))
+    cache_put(key, res)
+    return res

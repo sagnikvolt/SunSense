@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-kr6K7Uytuqwra8x8EDMw95gqlaBGeARuHyXfazPixFo='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-Tk35KqAVBqZUQ7XAI/Us1/z74R5ff0nahzCz/G326Pw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -240,6 +240,52 @@ footer a{color:inherit}
 .pill .m-sub{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .pill .tool{flex:none}
 
+/* ---------- solar potential legend ---------- */
+.legend{--tint:rgba(6,12,28,.55);position:fixed;z-index:2;right:76px;bottom:62px;width:250px;border-radius:16px;padding:10px 12px;display:grid;gap:5px}
+.legend .lt{font:600 12px var(--f-body)}
+.legend .bar{height:8px;border-radius:99px;background:linear-gradient(90deg,#342878 0%,#962d6e 20%,#e25634 37%,#ffa01e 53%,#ffcd46 73%,#fff4be 100%)}
+.legend .ticks{display:flex;justify-content:space-between;font:400 10px var(--f-mono);color:var(--muted)}
+.legend .src{font:400 9px var(--f-body);color:var(--faint)}
+#z-sun svg{width:18px;height:18px}
+#z-sun[aria-pressed=true]{color:var(--sun);border-color:rgba(255,190,46,.6)}
+
+/* ---------- Solar lab ---------- */
+.labbtn{width:auto;padding:0 10px;gap:6px;display:inline-flex;align-items:center;font:600 13px var(--f-body);color:var(--sun-ink)}
+.labbtn span{white-space:nowrap}
+.labsrc{font:500 10px var(--f-mono);letter-spacing:.06em;color:var(--faint);text-transform:uppercase;align-self:center;margin-right:6px}
+.v-lab{padding:0;gap:0;grid-template-rows:auto minmax(0,1fr);align-content:stretch}
+.lab{display:grid;grid-template-columns:170px minmax(0,1fr);min-height:0;border-top:1px solid var(--edge-soft)}
+.ltabs{display:flex;flex-direction:column;gap:4px;padding:12px 0 12px 12px;overflow:auto}
+.ltab{--gc:#f7883c;text-align:left;font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:transparent;
+  border:0;border-left:4px solid var(--gc);border-radius:0 10px 10px 0;padding:12px 12px;cursor:pointer}
+.ltab[data-group=data]{--gc:#9b74e0}.ltab[data-group=tmy]{--gc:#3fbf74}
+.ltab[aria-selected=true]{background:rgba(255,255,255,.1);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.lpanel{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;margin:12px 12px 12px 8px;border-radius:16px;overflow:hidden;border:1px solid var(--edge-soft);background:rgba(0,0,0,.18)}
+.lhead{--gc:#f7883c;background:linear-gradient(90deg,var(--gc),color-mix(in srgb,var(--gc) 70%,#000));padding:12px 16px}
+.lhead[data-group=data]{--gc:#9b74e0}.lhead[data-group=tmy]{--gc:#3fbf74}
+.lhead h3{margin:0;font:700 15px var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:#fff}
+.lbody{overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 18px;display:grid;gap:12px;align-content:start;scrollbar-width:thin}
+.lform{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;align-items:end}
+.lform .field{gap:4px}
+.lform label{font-size:13px}
+.lform input[type=number]{font-size:15px;padding:8px 10px}
+.lform .chk label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.lform .chk input{width:18px;height:18px;accent-color:var(--sun)}
+.lacts .btn{padding:9px 14px}
+.lacts .btn:disabled{opacity:.4;cursor:not-allowed}
+.lout{display:grid;gap:12px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.kpi{display:grid;gap:1px;padding:10px 12px;border-radius:12px;background:var(--glass-2);border:1px solid var(--edge-soft)}
+.kpi .k{font-size:12px;color:var(--muted)}.kpi .v{font:500 18px var(--f-mono);color:var(--sun-ink)}.kpi .s{font-size:11px;color:var(--muted)}
+.legend2{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+h4.sub{margin:4px 0 0;font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--edge-soft);border-radius:12px}
+.tbl table{border-collapse:collapse;width:100%;font:400 13px var(--f-mono);font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--edge-soft);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl th{color:var(--muted);font-weight:500}
+
 /* ---------- map controls + help ---------- */
 .zoomctl{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:grid;gap:8px;z-index:4}
 .zoomctl button{--tint:rgba(6,12,28,.45);width:42px;height:42px;border-radius:14px;color:var(--ink);font:500 18px var(--f-mono);cursor:pointer}
@@ -253,7 +299,7 @@ footer a{color:inherit}
   border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--ink);font:600 13px var(--f-body);cursor:pointer;transition:left 1.2s var(--ease)}
 body.fly .help,body.fly .help-open{left:50%}
 body.plan .help{max-width:calc(58vw - 90px)}
-body.st-expanded .help,body.st-expanded .help-open{display:none}
+body.st-expanded .help,body.st-expanded .help-open,body.st-lab .help,body.st-lab .help-open{display:none}
 body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc(100vw - 480px)}
 
 /* ---------- phone ---------- */
@@ -267,7 +313,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   #logo .sub{font-size:15px}
   .zoomctl{top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;transform:none}
   .zoomctl button{width:38px;height:38px}
-  body.st-expanded .zoomctl{display:none}
+  body.st-expanded .zoomctl,body.st-lab .zoomctl{display:none}
   #credits{max-width:none;right:64px;left:12px;text-align:left}
   .bar{grid-template-columns:minmax(0,1fr) auto}
   .bar .gps{grid-column:1/-1;grid-row:2;justify-content:center}
@@ -278,6 +324,13 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   body.st-mini .help{left:12px;max-width:none}
   .card[data-state=expanded] .cols{grid-template-columns:minmax(0,1fr)}
   .card[data-state=expanded] .pair{grid-template-columns:minmax(0,1fr)}
+  .lab{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .ltabs{flex-direction:row;overflow-x:auto;padding:10px 12px 0;gap:6px}
+  .ltab{border-left:0;border-bottom:3px solid var(--gc);border-radius:10px 10px 0 0;white-space:nowrap;padding:9px 10px;font-size:11px}
+  .lpanel{margin:0 12px 12px}
+  .labbtn span{display:none}
+  .legend{right:62px;left:12px;width:auto;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 38px)}
+  body:not(.st-search) .legend{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   :root{--morph:0s}
@@ -291,10 +344,17 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
 <div class="cross" id="cross" aria-hidden="true"><i></i></div>
 <div class="loading" id="g-loading">Loading 3D Earth…</div>
 <div id="credits"></div>
+<div class="legend glass" id="legend" hidden>
+  <span class="lt">Solar potential · kWh per kW a year</span>
+  <span class="bar" aria-hidden="true"></span>
+  <span class="ticks"><span>1,200</span><span>1,600</span><span>1,950+</span></span>
+  <span class="src">PVGIS 5.3, 2005–2023 · © European Union · CC BY 4.0</span>
+</div>
 
 <div class="zoomctl">
   <button type="button" class="glass" id="z-in" aria-label="Zoom in">+</button>
   <button type="button" class="glass" id="z-out" aria-label="Zoom out">−</button>
+  <button type="button" class="glass" id="z-sun" aria-label="Show the solar potential map" aria-pressed="true" title="Solar potential map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
   <button type="button" class="glass" id="z-home" aria-label="Back to all of India">⌂</button>
 </div>
 
@@ -348,6 +408,9 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
     <div class="rhead">
       <span class="mini-logo"><span class="dot" aria-hidden="true"></span>SunSense</span>
       <div class="tools">
+        <button type="button" class="tool labbtn" id="lab-btn" aria-label="Open the Solar lab" title="Solar lab (PVGIS tools)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6L4.5 18.5A1.6 1.6 0 0 0 5.9 21h12.2a1.6 1.6 0 0 0 1.4-2.5L14 9V3"/><path d="M7 15h10"/></svg><span>Solar lab</span>
+        </button>
         <button type="button" class="tool" id="grow" aria-label="Make bigger" title="Make bigger">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path id="grow-path" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>
         </button>
@@ -464,6 +527,41 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
           <footer class="rv">Estimates only · confirm rates with WBSEDCL and pmsuryaghar.gov.in · <a href="https://github.com/sagnikvolt/SunSense">Source</a></footer>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 6. Solar lab: the PVGIS tools -->
+  <div class="view v-lab" id="v-lab">
+    <div class="rhead">
+      <span class="mini-logo"><span class="dot" aria-hidden="true"></span>Solar lab</span>
+      <div class="tools"><span class="labsrc">PVGIS 5.3 · EU JRC</span>
+        <button type="button" class="tool" id="lab-back" aria-label="Back to my plan" title="Back to my plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+    </div>
+    <div class="lab">
+      <div class="ltabs" id="lab-tabs" role="tablist" aria-label="PVGIS tools">
+        <button type="button" class="ltab" role="tab" data-tool="grid" data-group="pv">Grid connected</button>
+        <button type="button" class="ltab" role="tab" data-tool="tracking" data-group="pv">Tracking PV</button>
+        <button type="button" class="ltab" role="tab" data-tool="offgrid" data-group="pv">Off-grid</button>
+        <button type="button" class="ltab" role="tab" data-tool="monthly" data-group="data">Monthly data</button>
+        <button type="button" class="ltab" role="tab" data-tool="daily" data-group="data">Daily data</button>
+        <button type="button" class="ltab" role="tab" data-tool="hourly" data-group="data">Hourly data</button>
+        <button type="button" class="ltab" role="tab" data-tool="tmy" data-group="tmy">TMY</button>
+      </div>
+      <section class="lpanel" role="tabpanel" aria-labelledby="l-title">
+        <div class="lhead" id="l-head" data-group="pv"><h3 id="l-title">Performance of grid-connected PV</h3></div>
+        <div class="lbody">
+          <p class="cap" id="l-where"></p>
+          <form class="lform" id="l-form" novalidate></form>
+          <div class="acts lacts">
+            <button type="button" class="btn primary" id="l-run">Visualise results</button>
+            <button type="button" class="btn ghost" id="l-csv" disabled>CSV</button>
+            <button type="button" class="btn ghost" id="l-json" disabled>JSON</button>
+          </div>
+          <p class="cap" id="l-status" aria-live="polite"></p>
+          <div class="lout" id="l-out"></div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -647,6 +745,7 @@ const cesiumReady=(async()=>{
   v.scene.screenSpaceCameraController.enableCollisionDetection=false;
   const tiles=await Cesium.createGooglePhotorealistic3DTileset({onlyUsingWithGoogleGeocoder:true},{showCreditsOnScreen:true});
   v.scene.primitives.add(tiles);
+  addSolarLayer(v);
 
   // Mouse & trackpad: scroll / two-finger / pinch zoom, right-drag zoom, Shift- or Ctrl-drag or middle-drag tilt
   const ssc=v.scene.screenSpaceCameraController, T=Cesium.CameraEventType, K=Cesium.KeyboardEventModifier;
@@ -906,11 +1005,249 @@ $("pv-batt").addEventListener("change",()=>{ battery=Math.min(Math.max(num("pv-b
 ["use","roof"].forEach(id=>$(id).addEventListener("input",scheduleDetail));
 ["by-units","by-bill","on","off"].forEach(id=>$(id).addEventListener("click",scheduleDetail));
 
+// ---------- PVGIS solar-potential map (offline lookup + globe overlay) ----------
+const YGRID={lat1:37.5,lon0:68,step:0.1,rows:315,cols:295};
+let YIELD=null;
+const yieldReady=fetch("assets/yield_india.bin").then(r=>r.ok?r.arrayBuffer():null).then(b=>{ if(b&&b.byteLength===YGRID.rows*YGRID.cols*2) YIELD=new Uint16Array(b); }).catch(()=>{});
+function yieldAt(lat,lon){              // kWh per kWp per year, bilinear, null outside data/land
+  if(!YIELD) return null;
+  const y=(YGRID.lat1-lat)/YGRID.step-0.5, x=(lon-YGRID.lon0)/YGRID.step-0.5;
+  const r0=Math.floor(y), c0=Math.floor(x); let s=0,w=0;
+  for(const [r,c,wt] of [[r0,c0,(1-(y-r0))*(1-(x-c0))],[r0,c0+1,(1-(y-r0))*(x-c0)],[r0+1,c0,(y-r0)*(1-(x-c0))],[r0+1,c0+1,(y-r0)*(x-c0)]]){
+    if(r<0||c<0||r>=YGRID.rows||c>=YGRID.cols) continue; const v=YIELD[r*YGRID.cols+c]; if(v>0){ s+=v*wt; w+=wt; } }
+  return w>0.2 ? s/w : null;
+}
+// Use the map to set sunlight for the quick estimate (PSH that reproduces the PVGIS yield at PR 0.8)
+async function applyYield(g){
+  await yieldReady; const y=yieldAt(g.lat,g.lng); if(!y) return;
+  g.yield=Math.round(y);
+  const psh=Math.min(Math.max(y/(365*C.PR),3.5),6);
+  $("psh").value=psh.toFixed(2); $("psh-h").textContent=`From the PVGIS solar map: about ${fmt(y)} kWh per kW of panels a year here.`;
+  render();
+}
+let solarLayer=null, solarOn=true;
+function addSolarLayer(v){
+  solarLayer=v.entities.add({rectangle:{coordinates:Cesium.Rectangle.fromDegrees(68,6,97.5,37.5),height:30000,
+    material:new Cesium.ImageMaterialProperty({image:"assets/solar_potential_india.png",transparent:true,color:Cesium.Color.WHITE.withAlpha(.82)})}});
+  syncSolarLayer();
+}
+function syncSolarLayer(){
+  const show=solarOn && cardState==="search";
+  if(solarLayer) solarLayer.show=show;
+  $("legend").hidden=!show; $("z-sun").setAttribute("aria-pressed",String(solarOn));
+}
+$("z-sun").onclick=()=>{ solarOn=!solarOn; syncSolarLayer(); };
+
+// ---------- Solar lab: the seven PVGIS tools ----------
+const LAB_URL = API_URL ? API_URL.replace(/calculate$/,"pvgis") : "";
+const TOOLS={
+  grid:{title:"Performance of grid-connected PV", group:"pv"},
+  tracking:{title:"Performance of sun-tracking PV", group:"pv"},
+  offgrid:{title:"Off-grid PV with a battery", group:"pv"},
+  monthly:{title:"Monthly solar radiation", group:"data"},
+  daily:{title:"Average daily profile", group:"data"},
+  hourly:{title:"Hourly radiation and PV output", group:"data"},
+  tmy:{title:"Typical meteorological year", group:"tmy"},
+};
+const MONTH_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+let labTool="grid", labData=null, labBusy=false;
+function planKw(){ const r=currentResult().r; return Math.max(r.kw,1); }
+function fields(tool){
+  const kw=+planKw().toFixed(2), units=currentResult().units, gross=Math.round(currentResult().r.gross);
+  const tilt=pvLive()&&pv.pvgis.tilt!=null?pv.pvgis.tilt:28;
+  const ang=[["slope","Panel tilt (°)","number",tilt,0,90],["azimuth","Facing (°, 0 = south, −90 = east, 90 = west)","number",0,-180,180]];
+  return {
+    grid:[["tech","PV technology","select","crystSi",[["crystSi","Crystalline silicon"],["CIS","CIS thin film"],["CdTe","CdTe thin film"],["Unknown","Unknown"]]],
+          ["kwp","Installed peak power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],
+          ["mounting","Mounting","select","free",[["free","Free-standing (on a frame)"],["building","Roof-integrated"]]],
+          ["optimize","Angles","select","both",[["both","Best tilt and facing"],["slope","Best tilt, my facing"],["none","My tilt and facing"]]],
+          ...ang, ["price","Work out the cost per unit","check",true], ["cost","System cost (₹)","number",gross,0,1e9],
+          ["interest","Loan interest (% a year)","number",0,0,30],["lifetime","Lifetime (years)","number",25,1,50]],
+    tracking:[["kwp","Installed peak power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],
+          ["inclined","Inclined axis","check",true],["vertical","Vertical axis","check",true],["twoaxis","Two-axis","check",true]],
+    offgrid:[["wp","Panel power (W)","number",Math.round(kw*1000),10,1e6],["battery_wh","Battery capacity (Wh)","number",8000,100,1e6],
+          ["cutoff","Discharge cut-off (%)","number",40,10,90],["consumption_wh","Use per day (Wh)","number",Math.round(units*1000/30),10,1e6],...ang],
+    monthly:[["start","From year","number",2005,2005,2023],["end","To year","number",2023,2005,2023]],
+    daily:[["month","Month","select","4",MONTH_NAMES.map((m,i)=>[String(i+1),m])],...ang],
+    hourly:[["year","Year","number",2023,2005,2023],["kwp","Installed peak power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],...ang],
+    tmy:[],
+  }[tool];
+}
+function buildForm(){
+  const f=$("l-form"); f.innerHTML="";
+  for(const [id,label,kind,def,a,b] of fields(labTool)){
+    const wrap=document.createElement("div"); wrap.className="field"+(kind==="check"?" chk":"");
+    const lid="lf-"+id;
+    if(kind==="check"){ wrap.innerHTML=`<label><input type="checkbox" id="${lid}"> <span></span></label>`; wrap.querySelector("span").textContent=label; wrap.querySelector("input").checked=!!def; }
+    else if(kind==="select"){ wrap.innerHTML=`<label for="${lid}"></label><select id="${lid}"></select>`; wrap.querySelector("label").textContent=label;
+      const s=wrap.querySelector("select"); for(const [v,t] of a){ const o=document.createElement("option"); o.value=v; o.textContent=t; s.appendChild(o); } s.value=String(def); }
+    else { wrap.innerHTML=`<label for="${lid}"></label><input id="${lid}" type="number">`; wrap.querySelector("label").textContent=label;
+      const i=wrap.querySelector("input"); i.min=a; i.max=b; i.step="any"; i.value=def; }
+    f.appendChild(wrap);
+  }
+  if(!fields(labTool).length){ const p=document.createElement("p"); p.className="cap"; p.textContent="The most typical month of each calendar month from 2005–2023, picked for this spot. Used for building and energy design."; f.appendChild(p); }
+  const ang=()=>{ const o=$("lf-optimize"); if(!o) return; const v=o.value; $("lf-slope").closest(".field").hidden=v!=="none"; $("lf-azimuth").closest(".field").hidden=v==="both"; };
+  const pr=()=>{ const c=$("lf-price"); if(!c) return; for(const k of ["cost","interest","lifetime"]) $("lf-"+k).closest(".field").hidden=!c.checked; };
+  $("lf-optimize")&&$("lf-optimize").addEventListener("change",ang); $("lf-price")&&$("lf-price").addEventListener("change",pr); ang(); pr();
+}
+function readForm(){
+  const body={tool:labTool,lat:+here.lat.toFixed(5),lon:+here.lng.toFixed(5)};
+  for(const [id,,kind,,a,b] of fields(labTool)){
+    const el=$("lf-"+id); if(!el || el.closest(".field").hidden) continue;
+    if(kind==="check"){ if(id!=="price") body[id]=el.checked; continue; }
+    if(kind==="select"){ body[id]= id==="month" ? +el.value : el.value; continue; }
+    const v=parseFloat(el.value); if(!Number.isFinite(v)||v<a||v>b) throw new Error(`${el.closest(".field").querySelector("label").textContent}: enter a value from ${a} to ${b}.`);
+    body[id]=v;
+  }
+  if(labTool==="grid" && !$("lf-price").checked) delete body.cost;
+  return body;
+}
+function setTab(t){
+  labTool=t; labData=null;
+  document.querySelectorAll(".ltab").forEach(b=>{ const on=b.dataset.tool===t; b.setAttribute("aria-selected",String(on)); b.tabIndex=on?0:-1; });
+  $("l-title").textContent=TOOLS[t].title; $("l-head").dataset.group=TOOLS[t].group;
+  $("l-out").innerHTML=""; $("l-status").textContent=""; $("l-csv").disabled=$("l-json").disabled=true;
+  buildForm();
+}
+document.querySelectorAll(".ltab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tool)));
+$("lab-tabs").addEventListener("keydown",e=>{ const tabs=[...document.querySelectorAll(".ltab")], i=tabs.findIndex(b=>b.dataset.tool===labTool);
+  const n = e.key==="ArrowDown"||e.key==="ArrowRight" ? 1 : e.key==="ArrowUp"||e.key==="ArrowLeft" ? -1 : 0;
+  if(n){ e.preventDefault(); const t=tabs[(i+n+tabs.length)%tabs.length]; setTab(t.dataset.tool); t.focus(); } });
+
+async function runLab(){
+  if(!LAB_URL){ $("l-status").textContent="The Solar lab needs the SunSense server (PVGIS blocks direct browser calls). It works when you run backend/dev_server.py, and on the live site once the AWS API is deployed."; return; }
+  if(!here){ $("l-status").textContent="Pick a location first."; return; }
+  let body; try{ body=readForm(); }catch(e){ $("l-status").textContent=e.message; return; }
+  labBusy=true; $("l-run").disabled=true; $("l-status").textContent= labTool==="tmy"||labTool==="hourly" ? "Fetching 8,760 hours from PVGIS…" : "Asking PVGIS…";
+  const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),28000);
+  try{
+    const res=await fetch(LAB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
+    const d=await res.json(); if(!res.ok) throw new Error(d.error||"PVGIS error");
+    labData={request:body,result:d}; $("l-status").textContent=`${d.source} · ${d.radiation_db||""} · ${d.years&&d.years[0]?d.years.join("–"):""} · elevation ${d.elevation_m??"—"} m`;
+    renderLab(d); $("l-csv").disabled=$("l-json").disabled=false;
+  }catch(e){ $("l-status").textContent = e.name==="AbortError" ? "PVGIS took too long. Try again." : String(e.message||e).slice(0,160); }
+  finally{ clearTimeout(to); labBusy=false; $("l-run").disabled=false; }
+}
+$("l-run").onclick=runLab;
+$("l-form").addEventListener("submit",e=>{ e.preventDefault(); runLab(); });
+
+// --- small SVG chart helpers (scaled, labelled, theme-safe) ---
+const SVGW=560;
+function axes(H,top,fmtv=v=>Math.round(v)){ const L=46,R=10,T=14,B=26; const st=niceStep(top/4)||1; const tp=Math.ceil(top/st)*st;
+  const y=v=>T+(H-T-B)*(1-v/tp); let s=""; for(let v=0;v<=tp+1e-9;v+=st) s+=`<line x1="${L}" x2="${SVGW-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.1)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${fmtv(v)}</text>`;
+  return {L,R,T,B,y,s}; }
+function barChart(series,labels,{H=220,unit=""}={}){
+  const max=Math.max(1,...series.flatMap(s=>s.values.map(v=>v||0))); const a=axes(H,max);
+  const n=labels.length, bw=(SVGW-a.L-a.R)/n, k=series.length; let s=a.s;
+  series.forEach((se,j)=>se.values.forEach((v,i)=>{ const w=bw*.7/k, x=a.L+i*bw+bw*.15+j*w; const h=a.y(0)-a.y(v||0);
+    s+=`<rect x="${x.toFixed(1)}" y="${a.y(v||0).toFixed(1)}" width="${Math.max(w-1,1).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${se.color}"><title>${labels[i]}: ${fmt1(v)} ${unit}</title></rect>`; }));
+  const every=Math.ceil(n/14); labels.forEach((l,i)=>{ if(i%every===0) s+=`<text x="${(a.L+i*bw+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${l}</text>`; });
+  return svgWrap(s,H,series); }
+function lineChart(series,labels,{H=220,unit=""}={}){
+  const max=Math.max(1,...series.flatMap(s=>s.values.map(v=>v||0))); const a=axes(H,max);
+  const n=labels.length, x=i=>a.L+(SVGW-a.L-a.R)*(n<2?0:i/(n-1)); let s=a.s;
+  for(const se of series){ const pts=se.values.map((v,i)=>v==null?null:`${x(i).toFixed(1)},${a.y(v).toFixed(1)}`).filter(Boolean).join(" ");
+    s+=`<polyline points="${pts}" fill="none" stroke="${se.color}" stroke-width="2"${se.dash?' stroke-dasharray="5 4"':''}/>`; }
+  const every=Math.ceil(n/12); labels.forEach((l,i)=>{ if(i%every===0) s+=`<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${l}</text>`; });
+  return svgWrap(s,H,series); }
+function svgWrap(inner,H,series){ const leg=series.length>1? `<div class="legend2">${series.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>`:"";
+  return `${leg}<svg class="chart" viewBox="0 0 ${SVGW} ${H}" role="img">${inner}</svg>`; }
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt1=v=>v==null?"—":(Math.abs(v)>=100?Math.round(v).toLocaleString("en-IN"):(+v).toFixed(1));
+function kpis(items){ return `<div class="kpis">${items.map(([k,v,s])=>`<div class="kpi"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span>${s?`<span class="s">${esc(s)}</span>`:""}</div>`).join("")}</div>`; }
+function table(head,rows){ return `<div class="tbl"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
+const SUN="#ffbe2e", SUN2="#ff8a3d", SKY="#7fb2ff", VIO="#b18cff", MINT="#5fe0a6";
+function dayLabels(year,n){ const d0=Date.UTC(year,0,1); return Array.from({length:n},(_,i)=>{ const d=new Date(d0+i*864e5); return d.getUTCDate()===1?MONTH_NAMES[d.getUTCMonth()]:""; }); }
+function daySums(arr,per=24){ const out=[]; for(let i=0;i<arr.length;i+=per){ let s=0; for(let j=i;j<i+per&&j<arr.length;j++) s+=arr[j]||0; out.push(s); } return out; }
+function monthMeans(arr,year){ const sums=Array(12).fill(0), n=Array(12).fill(0); arr.forEach((v,i)=>{ const m=new Date(Date.UTC(year,0,1)+i*36e5).getUTCMonth(); if(v!=null){ sums[m]+=v; n[m]++; } }); return sums.map((s,i)=>n[i]?s/n[i]:null); }
+const faceText=az=>az==null?"—":az===0?"south":`${Math.abs(az)}° ${az<0?"east":"west"} of south`;
+
+function renderLab(d){
+  const o=$("l-out"); let h="";
+  if(d.tool==="grid"){
+    const t=d.totals, m=d.mount;
+    h+=kpis([["Yearly output",`${fmt1(t.E_y)} kWh`,`±${fmt1(t.SD_y)} kWh year to year`],["Per kWp",`${fmt1(t.E_y/d.kwp)} kWh`,"a year"],
+             ["Sunlight on panels",`${fmt1(t.H_y)} kWh/m²`,"a year"],["Tilt / facing",`${fmt1(m.slope)}°`,faceText(m.azimuth)+(m.slope_optimal?" (best)":"")],
+             ...(t.lcoe!=null?[["Cost per unit",`₹${t.lcoe.toFixed(2)}`,"over the system's life"]]:[])]);
+    h+=barChart([{name:"kWh",values:d.monthly.map(r=>r.E_m),color:SUN}],MONTH_NAMES,{unit:"kWh"});
+    h+=`<div class="chips">${[["Angle",t.loss_angle],["Spectrum",t.loss_spectral],["Heat",t.loss_temp],["Total",t.loss_total]].map(([k,v])=>`<span class="chip">${k} ${v==null?"—":(v>0?"+":"")+v.toFixed(1)+"%"}</span>`).join("")}</div>`;
+    h+=table(["Month","kWh","Sunlight kWh/m²","± kWh"],d.monthly.map(r=>[MONTH_NAMES[r.month-1],fmt1(r.E_m),fmt1(r.H_m),fmt1(r.SD_m)]));
+  } else if(d.tool==="tracking"){
+    const NAMES={fixed:"Fixed (best angle)",inclined_axis:"Inclined axis",vertical_axis:"Vertical axis",two_axis:"Two-axis"}, COL={fixed:SKY,inclined_axis:SUN,vertical_axis:SUN2,two_axis:MINT};
+    const ks=Object.keys(d.systems); const fixedY=d.systems.fixed&&d.systems.fixed.totals.E_y;
+    h+=kpis(ks.map(k=>[NAMES[k]||k,`${fmt1(d.systems[k].totals.E_y)} kWh`, fixedY&&k!=="fixed"?`${((d.systems[k].totals.E_y/fixedY-1)*100).toFixed(0)}% vs fixed`:"a year"]));
+    h+=lineChart(ks.map(k=>({name:NAMES[k]||k,values:d.systems[k].monthly.map(r=>r.E_m),color:COL[k]||SUN})),MONTH_NAMES,{unit:"kWh"});
+    h+=`<p class="cap">Trackers follow the sun and make more energy, but cost more and need ground or flat-roof space. For most homes a fixed rack at the best angle is the better buy.</p>`;
+  } else if(d.tool==="offgrid"){
+    const t=d.totals;
+    h+=kpis([["Battery full",`${fmt1(t.f_f)}%`,"of days"],["Battery empty",`${fmt1(t.f_e)}%`,"of days"],["Shortfall",`${fmt1(t.miss_kwh_day)} kWh`,"a day on average"],["Unused sunshine",`${fmt1(t.lost_kwh_day)} kWh`,"a day on average"]]);
+    h+=barChart([{name:"Days battery full (%)",values:d.monthly.map(r=>r.f_f),color:SUN},{name:"Days battery empty (%)",values:d.monthly.map(r=>r.f_e),color:VIO}],MONTH_NAMES,{unit:"%"});
+    if(d.histogram&&d.histogram.length) h+=`<h4 class="sub">Battery charge at the end of each hour</h4>`+barChart([{name:"% of hours",values:d.histogram.map(x=>x.pct),color:SKY}],d.histogram.map(x=>`${Math.round(x.from)}–${Math.round(x.to)}%`),{H:180,unit:"%"});
+  } else if(d.tool==="monthly"){
+    const months=[...Array(12).keys()], avg=k=>months.map(m=>{ const v=d.rows.filter(r=>r.month===m+1&&r[k]!=null).map(r=>r[k]); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; });
+    const years=[...new Set(d.rows.map(r=>r.year))];
+    h+=kpis([["Years",`${years[0]}–${years[years.length-1]}`,`${years.length} years`],["Best fixed tilt",`${fmt1(d.optimal_slope)}°`,"facing south"],
+             ["Sunlight, flat",`${fmt1(avg("H_h").reduce((a,b)=>a+(b||0),0))} kWh/m²`,"a year"],["Sunlight, best tilt",`${fmt1(avg("H_opt").reduce((a,b)=>a+(b||0),0))} kWh/m²`,"a year"]]);
+    h+=barChart([{name:"Flat (kWh/m²)",values:avg("H_h"),color:SKY},{name:"Best tilt (kWh/m²)",values:avg("H_opt"),color:SUN}],MONTH_NAMES,{unit:"kWh/m²"});
+    h+=`<h4 class="sub">Average air temperature (°C)</h4>`+lineChart([{name:"°C",values:avg("T"),color:SUN2}],MONTH_NAMES,{H:170,unit:"°C"});
+    const yearly=years.map(y=>[y,fmt1(d.rows.filter(r=>r.year===y).reduce((a,r)=>a+(r.H_opt||0),0))]);
+    h+=`<h4 class="sub">Sunlight at best tilt, year by year (kWh/m²)</h4>`+barChart([{name:"kWh/m²",values:yearly.map(r=>+String(r[1]).replace(/,/g,"")),color:SUN}],years.map(String),{H:170,unit:"kWh/m²"});
+  } else if(d.tool==="daily"){
+    const lab=d.rows.map(r=>r.time);
+    h+=kpis([["Month",MONTH_NAMES[d.month-1],"average day"],["Peak sunlight",`${fmt1(Math.max(...d.rows.map(r=>r.G||0)))} W/m²`,"on the panels"],
+             ["Daily total",`${(d.rows.reduce((a,r)=>a+(r.G||0),0)/1000).toFixed(2)} kWh/m²`,"on the panels"],["Hottest hour",`${fmt1(Math.max(...d.rows.map(r=>r.T??-99)))} °C`,""]]);
+    h+=lineChart([{name:"Total (W/m²)",values:d.rows.map(r=>r.G),color:SUN},{name:"Direct",values:d.rows.map(r=>r.Gb),color:SUN2},{name:"Diffuse",values:d.rows.map(r=>r.Gd),color:SKY}],lab,{unit:"W/m²"});
+    h+=`<h4 class="sub">Air temperature (°C)</h4>`+lineChart([{name:"°C",values:d.rows.map(r=>r.T),color:SUN2}],lab,{H:160,unit:"°C"});
+  } else if(d.tool==="hourly"){
+    const daily=daySums(d.P).map(v=>v/1000), yearKwh=daily.reduce((a,b)=>a+b,0);
+    const best=daily.indexOf(Math.max(...daily)), worst=daily.indexOf(Math.min(...daily)), dd=i=>new Date(Date.UTC(d.year,0,1)+i*864e5).toLocaleDateString("en-IN",{day:"numeric",month:"short",timeZone:"UTC"});
+    h+=kpis([["Year",String(d.year),"8,760 hours"],["Output",`${fmt1(yearKwh)} kWh`,"that year"],["Best day",`${fmt1(daily[best])} kWh`,dd(best)],["Worst day",`${fmt1(daily[worst])} kWh`,dd(worst)]]);
+    h+=barChart([{name:"kWh per day",values:daily,color:SUN}],dayLabels(d.year,daily.length),{unit:"kWh"});
+    h+=`<h4 class="sub">Monthly average air temperature (°C)</h4>`+lineChart([{name:"°C",values:monthMeans(d.T,d.year),color:SUN2}],MONTH_NAMES,{H:160,unit:"°C"});
+    h+=`<p class="cap">Download the CSV for all 8,760 hourly rows (time, PV power, sunlight on the panels, temperature, wind).</p>`;
+  } else if(d.tool==="tmy"){
+    const yr=+(d.first||"2017").slice(0,4);
+    const ghiDay=daySums(d.GHI).map(v=>v/1000), mGhi=Array(12).fill(0), mN=Array(12).fill(0);
+    ghiDay.forEach((v,i)=>{ const m=new Date(Date.UTC(yr,0,1)+i*864e5).getUTCMonth(); mGhi[m]+=v; mN[m]++; });
+    h+=kpis([["Sunlight, flat",`${fmt1(ghiDay.reduce((a,b)=>a+b,0))} kWh/m²`,"typical year"],["Mean temperature",`${fmt1(d.T.reduce((a,b)=>a+(b||0),0)/d.T.length)} °C`,""],
+             ["Mean humidity",`${fmt1(d.RH.reduce((a,b)=>a+(b||0),0)/d.RH.length)}%`,""],["Mean wind",`${fmt1(d.WS.reduce((a,b)=>a+(b||0),0)/d.WS.length)} m/s`,"at 10 m"]]);
+    h+=barChart([{name:"kWh/m² a day",values:mGhi.map((s,i)=>mN[i]?s/mN[i]:null),color:SUN}],MONTH_NAMES,{unit:"kWh/m²/day"});
+    h+=`<h4 class="sub">Temperature and humidity, monthly means</h4>`+lineChart([{name:"°C",values:monthMeans(d.T,yr),color:SUN2},{name:"Humidity %",values:monthMeans(d.RH,yr),color:SKY,dash:true}],MONTH_NAMES,{H:180});
+    h+=table(["Month","Year picked"],(d.months_selected||[]).map(r=>[MONTH_NAMES[(r.month||1)-1],String(r.year)]));
+  }
+  o.innerHTML=h;
+}
+
+// downloads (built in the browser from the data on screen)
+function save(name,text,type){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); }
+function csvOf(d){
+  const rows=[], q=v=>v==null?"":String(v);
+  const hourTimes=(first,n)=>{ const y=+first.slice(0,4), mo=+first.slice(4,6)-1, da=+first.slice(6,8), hh=+first.slice(9,11), mi=+first.slice(11,13); const t0=Date.UTC(y,mo,da,hh,mi);
+    return Array.from({length:n},(_,i)=>new Date(t0+i*36e5).toISOString().slice(0,16).replace("T"," ")); };
+  if(d.tool==="grid"){ rows.push(["month","E_m_kWh","H_m_kWh_m2","SD_m_kWh"]); d.monthly.forEach(r=>rows.push([r.month,r.E_m,r.H_m,r.SD_m])); }
+  else if(d.tool==="tracking"){ const ks=Object.keys(d.systems); rows.push(["month",...ks.map(k=>k+"_kWh")]); for(let m=0;m<12;m++) rows.push([m+1,...ks.map(k=>(d.systems[k].monthly[m]||{}).E_m)]); }
+  else if(d.tool==="offgrid"){ rows.push(["month","E_d_kWh","lost_d_kWh","days_full_pct","days_empty_pct"]); d.monthly.forEach(r=>rows.push([r.month,r.E_d_kwh,r.lost_d_kwh,r.f_f,r.f_e])); }
+  else if(d.tool==="monthly"){ rows.push(["year","month","H_horizontal_kWh_m2","H_optimal_kWh_m2","T2m_C"]); d.rows.forEach(r=>rows.push([r.year,r.month,r.H_h,r.H_opt,r.T])); }
+  else if(d.tool==="daily"){ rows.push(["local_time","G_i_W_m2","Gb_i_W_m2","Gd_i_W_m2","T2m_C"]); d.rows.forEach(r=>rows.push([r.time,r.G,r.Gb,r.Gd,r.T])); }
+  else if(d.tool==="hourly"){ const t=hourTimes(d.first,d.P.length); rows.push(["time_utc","P_W","G_i_W_m2","T2m_C","WS10m_m_s"]); d.P.forEach((v,i)=>rows.push([t[i],v,d.G[i],d.T[i],d.WS[i]])); }
+  else if(d.tool==="tmy"){ const t=hourTimes(d.first,d.T.length); rows.push(["time_utc","T2m_C","RH_pct","GHI_W_m2","DNI_W_m2","DHI_W_m2","IR_W_m2","WS10m_m_s","WD10m_deg","SP_Pa"]);
+    d.T.forEach((v,i)=>rows.push([t[i],v,d.RH[i],d.GHI[i],d.DNI[i],d.DHI[i],d.IR[i],d.WS[i],d.WD[i],d.SP[i]])); }
+  return `# SunSense Solar lab · ${d.source} · lat ${labData.request.lat} lon ${labData.request.lon} · PVGIS © European Union, 2001-2026\n`+rows.map(r=>r.map(q).join(",")).join("\n");
+}
+$("l-csv").onclick=()=>{ if(labData) save(`sunsense_${labTool}_${labData.request.lat}_${labData.request.lon}.csv`,csvOf(labData.result),"text/csv"); };
+$("l-json").onclick=()=>{ if(labData) save(`sunsense_${labTool}_${labData.request.lat}_${labData.request.lon}.json`,JSON.stringify(labData,null,1),"application/json"); };
+
+function openLab(){
+  $("l-where").textContent = here ? `${here.label} · ${fmtCoords(here.lat,here.lng)}` : "";
+  setTab(labTool); go("lab");
+}
+$("lab-btn").onclick=openLab;
+$("lab-back").onclick=()=>go(lastBig);
 
 // ---------- the shape-shifting card ----------
 const card=$("card"), logoEl=$("logo");
-const BODY_MODE={search:"landing",progress:"fly",found:"fly",calc:"fly",results:"plan",expanded:"plan",mini:"fly"};
-const VIEW={search:"v-search",progress:"v-progress",found:"v-found",calc:"v-progress",results:"v-results",expanded:"v-results",mini:"v-mini"};
+const BODY_MODE={search:"landing",progress:"fly",found:"fly",calc:"fly",results:"plan",expanded:"plan",mini:"fly",lab:"plan"};
+const VIEW={search:"v-search",progress:"v-progress",found:"v-found",calc:"v-progress",results:"v-results",expanded:"v-results",mini:"v-mini",lab:"v-lab"};
 const STATES=Object.keys(VIEW);
 let lastBig="results";
 
@@ -925,14 +1262,14 @@ function geom(st){
   if(narrow()){
     const w=W-24, l=12;
     if(st==="results") { const h=Math.round(H*.58); return {l,t:H-12-h,w,h}; }
-    if(st==="expanded") return {l,t:12,w,h:H-24};
+    if(st==="expanded"||st==="lab") return {l,t:12,w,h:H-24};
     const h=measure(v,w); return {l,t:H-14-h,w,h};
   }
   const lx=Math.round(Math.min(Math.max(20,W*.06),104));
   if(st==="search"){ const w=Math.min(560,Math.round(W*.42)), h=measure(v,w);
     const lh=logoEl.offsetHeight, block=lh+24+h, top=Math.round((H-block)/2)+lh+24; return {l:lx,t:top,w,h}; }
   if(st==="results")  return {l:20,t:20,w:Math.min(468,Math.round(W*.42)),h:H-40};
-  if(st==="expanded") return {l:20,t:20,w:Math.min(1060,W-100),h:H-40};
+  if(st==="expanded"||st==="lab") return {l:20,t:20,w:Math.min(1060,W-100),h:H-40};
   if(st==="mini"){ const w=Math.min(400,W-40), h=measure(v,w); return {l:20,t:H-20-h,w,h}; }
   const w=Math.min(440,Math.round(W*.4)), h=measure(v,w);           // progress / found / calc
   return {l:lx,t:Math.round((H-h)/2),w,h};
@@ -952,6 +1289,7 @@ function go(st){
   for(const id of new Set(Object.values(VIEW))){ const on=id===VIEW[st]; $(id).classList.toggle("on",on); $(id).inert=!on; }
   if(st==="results"||st==="expanded") lastBig=st;
   if(!["found","results","expanded"].includes(st) && pinning) setPinning(false);
+  if(typeof syncSolarLayer==="function") syncSolarLayer();
   updateGrowIcon();
   place(false);
   if(pinning) setTimeout(placeCross,800);
@@ -1012,7 +1350,7 @@ $("set-pin2").onclick=setHere;
 
 // ---------- search → fly ----------
 function goTo(g,ticket){
-  here=g; pinMoved=false;
+  here=g; pinMoved=false; applyYield(g);
   $("r-place").textContent=g.label;
   const tag=g.tag||g.pincode||"Your home";
   const fly=()=>{
@@ -1126,7 +1464,7 @@ addEventListener("keydown",e=>{
   if(e.key!=="Escape") return;
   if(pinning) setPinning(false);
   else if(cardState==="expanded") go("results");
-  else if(cardState==="mini") go(lastBig);
+  else if(cardState==="mini"||cardState==="lab") go(lastBig);
 });
 
 $("find").addEventListener("submit",e=>{ e.preventDefault(); locate($("where").value); });

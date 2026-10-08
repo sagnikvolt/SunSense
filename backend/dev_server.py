@@ -25,7 +25,7 @@ PORT = int(os.environ.get("PORT", "8000"))
 
 class Handler(SimpleHTTPRequestHandler):
     def _lambda(self, method: str, body: str = ""):
-        event = {"requestContext": {"http": {"method": method}},
+        event = {"requestContext": {"http": {"method": method}}, "rawPath": self.path.split("?")[0],
                  "headers": {"origin": self.headers.get("Origin") or f"http://localhost:{PORT}"}, "body": body}
         out = lambda_handler(event)
         data = out["body"].encode()
@@ -37,7 +37,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_POST(self):
-        if self.path.split("?")[0] != "/api/calculate":
+        if self.path.split("?")[0] not in ("/api/calculate", "/api/pvgis"):
             return self.send_error(404)
         n = int(self.headers.get("Content-Length") or 0)
         if n > MAX_BODY_BYTES:

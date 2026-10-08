@@ -68,7 +68,7 @@ def cache_put(key: str, value: dict) -> None:
 # HTTP
 # ---------------------------------------------------------------------------
 
-MAX_RESPONSE_BYTES = 2_000_000
+MAX_RESPONSE_BYTES = 3_000_000   # TMY JSON is ~1.3 MB
 ALLOWED_HOSTS = {"power.larc.nasa.gov", "re.jrc.ec.europa.eu", "nominatim.openstreetmap.org"}
 
 

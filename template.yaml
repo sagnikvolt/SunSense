@@ -11,7 +11,7 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.12
-    Timeout: 25
+    Timeout: 28
     MemorySize: 256
     Architectures: [arm64]
 
@@ -67,6 +67,12 @@ Resources:
           Properties:
             ApiId: !Ref SunSenseApi
             Path: /calculate
+            Method: POST
+        Lab:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SunSenseApi
+            Path: /pvgis
             Method: POST
 
   CalculateLogs:
