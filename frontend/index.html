@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one continuous night sky. Earth (Cesium, transparent canvas) floats on the right over a CSS starfield;
-   a liquid-glass control panel sits on the left. Searching slides the panel away and the flight goes full screen. */
+/* Layout: one continuous night sky with Earth (transparent Cesium canvas) over a CSS starfield.
+   A single liquid-glass card shape-shifts through the journey: search → progress → found → calculating → results (expand / minimise). */
 :root{
   --void:#02040b;
   --ink:#eef3ff;
@@ -23,7 +23,6 @@
   --on-sun:#1a1200;
   --good:#5fe0a6;
   --warn:#ffad5c;
-  --glass-1:rgba(255,255,255,.075);
   --glass-2:rgba(255,255,255,.05);
   --edge:rgba(255,255,255,.2);
   --edge-soft:rgba(255,255,255,.1);
@@ -32,15 +31,16 @@
   --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
-  --gx:21vw;              /* how far Earth sits right of centre */
+  --gx:21vw;
   --ease:cubic-bezier(.65,0,.2,1);
+  --morph:.75s;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--void);color:var(--ink);font:16px/1.5 var(--f-body);overflow-x:hidden}
+body{background:var(--void);color:var(--ink);font:16px/1.5 var(--f-body);overflow:hidden}
 
-/* ---------- the sky ---------- */
+/* ---------- sky + Earth ---------- */
 .sky{position:fixed;inset:0;overflow:hidden;z-index:0;
   background:
     radial-gradient(ellipse 60% 70% at 72% 50%,rgba(40,80,170,.22),transparent 70%),
@@ -60,17 +60,17 @@ body{background:var(--void);color:var(--ink);font:16px/1.5 var(--f-body);overflo
   .stars.s1{animation:drift 240s linear infinite}
   .stars.s2{animation:drift 420s linear infinite reverse}
   @keyframes drift{to{transform:translate3d(-460px,-420px,0)}}
-  .stars.s2::after{content:"";position:absolute;inset:0;background:inherit;animation:twinkle 6s ease-in-out infinite alternate;opacity:.5}
-  @keyframes twinkle{to{opacity:0}}
 }
-#globe{position:absolute;top:0;bottom:0;left:0;width:calc(100% + 2 * var(--gx));transition:transform 1.4s var(--ease)}  /* wider than the screen so Earth sits right with no gap on the left */
+#globe{position:absolute;top:0;left:0;width:calc(100% + 2 * var(--gx));height:100%;transition:transform 1.2s var(--ease)}
 #globe .cesium-widget,#globe .cesium-widget canvas{width:100%;height:100%;outline:none}
+body.fly #globe{transform:translateX(calc(-1 * var(--gx)))}
+body.pinning #globe{cursor:crosshair}
 .loading{position:fixed;top:50%;left:calc(50% + var(--gx));transform:translate(-50%,-50%);font:500 13px var(--f-mono);color:var(--muted);
-  z-index:1;pointer-events:none;text-align:center;max-width:34ch;transition:left 1.4s var(--ease)}
+  z-index:1;pointer-events:none;text-align:center;max-width:34ch;transition:left 1.2s var(--ease)}
+body.fly .loading{left:50%}
 #credits{position:fixed;right:14px;top:10px;z-index:3;font:400 10px/1.35 var(--f-body);color:var(--faint);max-width:min(560px,60vw);text-align:right}
 #credits *{color:inherit!important;font-size:10px!important}
 #credits img{max-height:16px;vertical-align:middle}
-#credits a{text-decoration:underline}
 
 /* ---------- liquid glass ---------- */
 .glass{position:relative;isolation:isolate;
@@ -83,39 +83,86 @@ body{background:var(--void);color:var(--ink);font:16px/1.5 var(--f-body);overflo
 .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
   background:radial-gradient(120% 60% at 15% -10%,rgba(255,255,255,.22),transparent 55%),
              radial-gradient(80% 50% at 110% 110%,rgba(255,190,46,.10),transparent 60%)}
-.glass-2{background:var(--glass-2);border:1px solid var(--edge-soft);border-radius:18px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.glass-2{background:var(--glass-2);border:1px solid var(--edge-soft);border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
 
-/* ---------- left panel ---------- */
-.panel{--tint:rgba(6,12,28,.62);position:fixed;z-index:2;left:20px;top:20px;bottom:20px;width:min(468px,42vw);border-radius:30px;
-  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;
-  padding:24px 22px 18px;display:flex;flex-direction:column;gap:18px;
-  transition:transform 1.1s var(--ease),opacity .8s var(--ease)}
-.panel>*{flex-shrink:0}
-.brand{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
-.mini{font:700 26px/1 var(--f-display);letter-spacing:-.02em;text-transform:none;color:var(--ink);margin:0;display:flex;align-items:center;gap:10px}
-.mini .dot{width:.62em;height:.62em;border-radius:50%;background:var(--sun);box-shadow:0 0 0 5px rgba(255,190,46,.18),0 0 24px rgba(255,190,46,.7)}
-.mode{font:500 10px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--edge-soft);border-radius:99px;padding:4px 9px;white-space:nowrap}
-.tag{margin:-6px 0 0;color:var(--muted);font-size:15px;text-wrap:pretty}
-h2{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+/* ---------- logo (start page only) ---------- */
+#logo{position:fixed;z-index:2;margin:0;display:grid;gap:14px;transition:opacity .5s var(--ease),transform .7s var(--ease)}
+body:not(.st-search) #logo{opacity:0;transform:translateY(-16px);pointer-events:none}
+.logo{display:flex;align-items:center;gap:18px;font:700 clamp(46px,5.6vw,80px)/.95 var(--f-display);letter-spacing:-.035em;margin:0}
+.logo .sun{flex:none;width:.68em;height:.68em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff4c8,var(--sun) 45%,#ff8a00);
+  box-shadow:0 0 0 8px rgba(255,190,46,.12),0 0 70px rgba(255,190,46,.55)}
+#logo .sub{margin:0;color:var(--muted);font-size:18px;max-width:40ch;text-wrap:pretty}
 
-.search{display:grid;grid-template-columns:minmax(0,1fr) auto;border-radius:16px;overflow:hidden;padding:0}
-.search input{background:transparent;border:0;color:var(--ink);font:500 17px var(--f-mono);padding:14px 16px;min-width:0}
-.search input::placeholder{color:var(--faint)}
-.search input:focus-visible{outline:none}
-.search:focus-within{border-color:rgba(255,190,46,.7)}
-.search button{background:var(--sun);color:var(--on-sun);border:0;font:700 15px var(--f-body);padding:0 18px;cursor:pointer}
-.readout{display:grid;gap:1px;padding:0 4px;margin-top:-8px}
-.readout .place{font:600 15px var(--f-body)}
-.readout .coords{font:400 12px var(--f-mono);color:var(--muted)}
-.readout .msg{font-size:13px;color:var(--muted)}
+/* ---------- THE card ---------- */
+.card{--tint:rgba(6,12,28,.6);position:fixed;z-index:3;left:20px;top:50%;width:420px;height:72px;border-radius:24px;overflow:hidden;
+  transition:left var(--morph) var(--ease),top var(--morph) var(--ease),width var(--morph) var(--ease),height var(--morph) var(--ease),border-radius var(--morph) var(--ease)}
+.card[data-state=results],.card[data-state=expanded]{border-radius:28px}
+.card[data-state=mini]{border-radius:99px}
+.view{position:absolute;left:0;top:0;width:100%;height:100%;padding:18px;display:grid;align-content:start;gap:12px;
+  opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .25s,transform .25s,visibility 0s .25s}
+.view.on{opacity:1;visibility:visible;transform:none;transition:opacity .45s var(--ease) .22s,transform .55s var(--ease) .22s,visibility 0s}
+.eyebrow{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--sun-ink)}
+.title{font:700 22px/1.15 var(--f-display);letter-spacing:-.01em;text-wrap:balance}
+.sub2{font:400 13px var(--f-mono);color:var(--muted)}
+.hint{font-size:13px;color:var(--muted);text-wrap:pretty}
+.btn{font:700 14px var(--f-body);border-radius:12px;padding:10px 14px;cursor:pointer;border:1px solid var(--edge);white-space:nowrap}
+.btn.primary{background:var(--sun);color:var(--on-sun);border-color:transparent}
+.btn.ghost{background:rgba(255,255,255,.08);color:var(--ink)}
+.btn.on{border-color:var(--sun);color:var(--sun-ink)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+
+/* search view */
+.v-search{padding:6px;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px}
+.bar input{background:transparent;border:0;color:var(--ink);font:500 16px var(--f-mono);padding:11px 12px;min-width:0}
+.bar input::placeholder{color:var(--faint)}
+.bar input:focus-visible{outline:none}
+.card[data-state=search]:focus-within{border-color:rgba(255,190,46,.7)}
+.bar .go{background:var(--sun);color:var(--on-sun);border:0;border-radius:16px;font:700 15px var(--f-body);padding:12px 16px;cursor:pointer;white-space:nowrap}
+.bar .gps{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--edge-soft);
+  border-radius:16px;font:600 14px var(--f-body);padding:11px 12px;cursor:pointer;white-space:nowrap}
+.bar .gps svg{width:16px;height:16px;flex:none}
+#status{margin:0 10px 6px;font-size:14px;color:var(--warn)}
+#status:empty{display:none}
+
+/* progress view */
+.track{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+.fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#ff9d00,var(--sun),#fff1b8);box-shadow:0 0 18px rgba(255,190,46,.7)}
+.track.indet .fill{width:38%;animation:indet 1.15s var(--ease) infinite}
+@keyframes indet{from{transform:translateX(-105%)}to{transform:translateX(270%)}}
+
+/* found view */
+.v-found .coords,.here .coords{font:400 12px var(--f-mono);color:var(--muted)}
+
+/* results view */
+.v-results{padding:0;gap:0;grid-template-rows:auto minmax(0,1fr);align-content:stretch}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 10px 20px}
+.mini-logo{display:flex;align-items:center;gap:10px;font:700 24px/1 var(--f-display);letter-spacing:-.02em}
+.dot{width:.62em;height:.62em;border-radius:50%;background:var(--sun);box-shadow:0 0 0 5px rgba(255,190,46,.18),0 0 24px rgba(255,190,46,.7)}
+.tools{display:flex;gap:6px}
+.tool{width:36px;height:36px;border-radius:12px;border:1px solid var(--edge-soft);background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.tool svg{width:17px;height:17px}
+.scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;padding:4px 18px 18px;display:grid;gap:14px;align-content:start}
+.here{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:12px 14px}
+.here .place{font:600 15px var(--f-body)}
+.here .acts{grid-column:2;grid-row:1/3;flex-wrap:nowrap;gap:6px}
+.here .btn{padding:8px 12px}
+.cols{display:grid;gap:14px;align-items:start}
+.col{display:grid;gap:14px;min-width:0}
+.pair{display:grid;gap:14px}
+.card[data-state=expanded] .cols{grid-template-columns:minmax(0,.85fr) minmax(0,1.3fr)}
+.card[data-state=expanded] .pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.card[data-state=expanded] .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card[data-state=expanded] .stat:nth-child(2n){border-right:1px solid var(--edge-soft)}
+.card[data-state=expanded] .stat:nth-child(3n){border-right:0}
+.card[data-state=expanded] .stat:nth-last-child(-n+3){border-bottom:0}
 
 .sheet{padding:16px;display:grid;gap:16px}
+h2{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
 .field{display:grid;gap:6px}
 label,.lbl{font-weight:600;font-size:15px}
-.hint{font-size:13px;color:var(--muted)}
 input[type=number]{width:100%;font:500 17px var(--f-mono);color:var(--ink);background:rgba(0,0,0,.22);border:1px solid var(--edge-soft);border-radius:10px;padding:10px 12px}
-input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 .unit{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}
 .unit span{font:500 14px var(--f-mono);color:var(--muted);min-width:4.5ch}
 .seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;gap:3px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--edge-soft)}
@@ -124,7 +171,6 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 input[type=range]{width:100%;accent-color:var(--sun)}
 .psh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .psh output{font:500 16px var(--f-mono)}
-
 .lead{padding:18px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 20px;align-items:center}
 .payback{font:700 64px/.9 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums;
   background:linear-gradient(180deg,#fff 20%,var(--sun-ink));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -132,10 +178,10 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .lead p{margin:0;font-size:15px}
 .lead .k{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;grid-column:1/-1}
+.chips:empty{display:none}
 .chip{font:500 11px var(--f-mono);padding:3px 9px;border-radius:99px;border:1px solid var(--edge-soft);color:var(--muted)}
 .chip.warn{border-color:var(--warn);color:var(--warn)}
 .chip.good{border-color:var(--good);color:var(--good)}
-
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;padding:0}
 .stat{padding:12px 14px;display:grid;gap:1px;border-right:1px solid var(--edge-soft);border-bottom:1px solid var(--edge-soft)}
 .stat:nth-child(2n){border-right:0}
@@ -144,7 +190,6 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .stat .v{font:500 19px var(--f-mono);font-variant-numeric:tabular-nums}
 .stat .s{font-size:12px;color:var(--muted)}
 .stat.hl .v{color:var(--sun-ink)}
-
 .box{padding:16px;display:grid;gap:10px;min-width:0}
 .roof{display:grid;gap:4px;padding:10px;border-radius:10px;border:1px dashed var(--edge-soft);
   background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 6px,transparent 6px 12px)}
@@ -159,119 +204,65 @@ details summary{cursor:pointer;font-weight:600;color:var(--ink)}
 details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
 footer{font-size:12px;color:var(--faint);padding:0 4px}
 footer a{color:inherit}
-
-/* ---------- map controls + flight HUD ---------- */
-.zoomctl{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:grid;gap:8px;z-index:3}
-.zoomctl button{width:42px;height:42px;border-radius:14px;color:var(--ink);font:500 18px var(--f-mono);cursor:pointer}
-.hud{--tint:rgba(6,12,28,.55);position:fixed;z-index:3;left:20px;top:20px;max-width:min(440px,calc(100vw - 100px));border-radius:22px;padding:16px 18px;display:grid;gap:10px;
-  transform:translateY(-16px) scale(.98);opacity:0;pointer-events:none;transition:transform .45s var(--ease),opacity .35s var(--ease)}
-.hud .hint{font-size:13px;color:var(--muted);text-wrap:pretty}
-.hud .eyebrow{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--sun-ink)}
-.hud .name{font:700 24px/1.1 var(--f-display);letter-spacing:-.01em;text-wrap:balance}
-.hud .coords{font:400 12px var(--f-mono);color:var(--muted)}
-.hud .acts{display:flex;flex-wrap:wrap;gap:8px}
-.btn{font:700 14px var(--f-body);border-radius:12px;padding:10px 14px;cursor:pointer;border:1px solid var(--edge)}
-.btn.primary{background:var(--sun);color:var(--on-sun);border-color:transparent}
-.btn.ghost{background:rgba(255,255,255,.08);color:var(--ink)}
-
-body:not(.plan) .panel{transform:translateX(calc(-100% - 40px));opacity:0;pointer-events:none}
-body.fly #globe{transform:translateX(calc(-1 * var(--gx)))}
-body.fly .loading{left:50%}
-
-/* ---------- landing: logo + one glass bar ---------- */
-.hero{position:fixed;z-index:2;left:clamp(20px,6vw,104px);top:50%;transform:translateY(-50%);width:min(540px,42vw);display:grid;gap:22px;
-  transition:transform 1s var(--ease),opacity .7s var(--ease)}
-.logo{display:flex;align-items:center;gap:18px;font:700 clamp(46px,5.6vw,80px)/.95 var(--f-display);letter-spacing:-.035em;margin:0}
-.logo .sun{flex:none;width:.68em;height:.68em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff4c8,var(--sun) 45%,#ff8a00);
-  box-shadow:0 0 0 8px rgba(255,190,46,.12),0 0 70px rgba(255,190,46,.55)}
-.hero .sub{margin:0;color:var(--muted);font-size:18px;max-width:40ch;text-wrap:pretty}
-.bar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px;padding:6px;border-radius:20px}
-.bar input{background:transparent;border:0;color:var(--ink);font:500 16px var(--f-mono);padding:11px 12px;min-width:0}
-.bar input::placeholder{color:var(--faint)}
-.bar input:focus-visible{outline:none}
-.bar:focus-within{border-color:rgba(255,190,46,.7)}
-.bar .go{background:var(--sun);color:var(--on-sun);border:0;border-radius:14px;font:700 15px var(--f-body);padding:12px 16px;cursor:pointer;white-space:nowrap}
-.bar .gps{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--edge-soft);
-  border-radius:14px;font:600 14px var(--f-body);padding:11px 12px;cursor:pointer;white-space:nowrap}
-.bar .gps svg{width:16px;height:16px;flex:none}
-.bar .gps[aria-busy=true] svg{animation:spin 1.2s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.hero .msg{min-height:1.4em;margin:-12px 0 0 8px;font-size:14px;color:var(--muted)}
-body:not(.landing) .hero{opacity:0;pointer-events:none;transform:translate(-40px,-50%)}
-.here{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:12px 14px}
-.here .place{font:600 15px var(--f-body)}
-.here .coords{font:400 12px var(--f-mono);color:var(--muted)}
-.here .acts{grid-column:2;grid-row:1/3;display:flex;gap:6px}
-.here .acts .btn{padding:8px 12px}
-body.fly .hud{transform:none;opacity:1;pointer-events:auto;transition:transform .8s var(--ease) .5s,opacity .8s var(--ease) .5s}
-
-/* ---------- "Calculating" hand-off between the flight and the plan ---------- */
-.calcard{--tint:rgba(6,12,28,.62);position:fixed;z-index:3;left:20px;top:50%;width:min(468px,42vw);border-radius:26px;padding:22px 22px 20px;display:grid;gap:12px;
-  opacity:0;pointer-events:none;transform:translateY(-50%) scale(.96);transition:opacity .45s var(--ease),transform .7s var(--ease)}
-body.calc .calcard{opacity:1;transform:translateY(-50%) scale(1)}
-.calcard .eyebrow{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--sun-ink)}
-.calcard .title{font:700 22px/1.15 var(--f-display);letter-spacing:-.01em}
-.calcard .sub{font:400 13px var(--f-mono);color:var(--muted);min-height:1.4em}
-.track{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
-.fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#ff9d00,var(--sun),#fff1b8);box-shadow:0 0 18px rgba(255,190,46,.7)}
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.panel.reveal>*{animation:rise .65s var(--ease) both;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+.reveal{animation:rise .65s var(--ease) both;animation-delay:calc(var(--i,0) * 70ms + 250ms)}
 
-/* ---------- manual pin ---------- */
-.pintip{--tint:rgba(6,12,28,.62);position:fixed;z-index:4;top:20px;left:calc(50% + var(--gx));transform:translateX(-50%);border-radius:99px;
-  padding:8px 8px 8px 16px;display:flex;align-items:center;gap:12px;font:600 14px var(--f-body);transition:left 1.4s var(--ease)}
-body.fly .pintip{left:50%}
-.pintip .btn{padding:6px 12px;font-size:13px}
-body.pinning #globe{cursor:crosshair}
+/* mini view */
+.v-mini{padding:6px;align-content:center}
+.pill{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--ink);cursor:pointer;text-align:left;padding:6px 8px 6px 12px;border-radius:99px}
+.pill .dot{flex:none;width:14px;height:14px}
+.pill .m-main{font:700 17px var(--f-display);white-space:nowrap}
+.pill .m-sub{font:400 12px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.pill .tool{flex:none}
 
-/* ---------- map controls help ---------- */
-.help{--tint:rgba(6,12,28,.5);position:fixed;z-index:3;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);
+/* ---------- map controls + help ---------- */
+.zoomctl{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:grid;gap:8px;z-index:4}
+.zoomctl button{--tint:rgba(6,12,28,.45);width:42px;height:42px;border-radius:14px;color:var(--ink);font:500 18px var(--f-mono);cursor:pointer}
+.help{--tint:rgba(6,12,28,.5);position:fixed;z-index:2;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);
   max-width:min(780px,calc(100vw - 40px));border-radius:99px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:12px;
-  font:400 13px var(--f-body);color:var(--muted);transition:left 1.4s var(--ease)}
+  font:400 13px var(--f-body);color:var(--muted);transition:left 1.2s var(--ease)}
 .help b{color:var(--ink);font-weight:600}
 .help .sep{opacity:.35;margin:0 2px}
 .help .x{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--edge-soft);background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;font:500 15px/1 var(--f-body)}
-.help-open{--tint:rgba(6,12,28,.5);position:fixed;z-index:3;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);height:34px;padding:0 14px;
-  border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--ink);font:600 13px var(--f-body);cursor:pointer;transition:left 1.4s var(--ease)}
+.help-open{--tint:rgba(6,12,28,.5);position:fixed;z-index:2;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);height:34px;padding:0 14px;
+  border-radius:99px;display:flex;align-items:center;gap:6px;color:var(--ink);font:600 13px var(--f-body);cursor:pointer;transition:left 1.2s var(--ease)}
 body.fly .help,body.fly .help-open{left:50%}
-body:not(.fly) .help{max-width:calc(58vw - 90px)}
+body.plan .help{max-width:calc(58vw - 90px)}
+body.st-expanded .help,body.st-expanded .help-open{display:none}
+body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc(100vw - 480px)}
 
 /* ---------- phone ---------- */
 @media (max-width:860px){
   :root{--gx:0px}
-  #globe{bottom:auto;height:calc(100% + 16vh);transform:translateY(-16vh)}
-  .hero{left:16px;right:16px;width:auto;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:none;gap:16px}
-  body:not(.landing) .hero{transform:translateY(40px)}
-  .hero .sub{font-size:15px}
+  #globe{height:calc(100% + 32vh);transform:translateY(-24vh)}
+  body.fly #globe{transform:translateY(-24vh)}
+  body.plan #globe{transform:translateY(-31vh)}
+  body.st-mini #globe{transform:translateY(-18vh)}
+  .loading{top:34vh}
+  #logo .sub{font-size:15px}
+  .zoomctl{top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;transform:none}
+  .zoomctl button{width:38px;height:38px}
+  body.st-expanded .zoomctl{display:none}
+  #credits{max-width:none;right:64px;left:12px;text-align:left}
   .bar{grid-template-columns:minmax(0,1fr) auto}
   .bar .gps{grid-column:1/-1;grid-row:2;justify-content:center}
-  body:not(.plan) .panel{display:none}
-  .loading{top:34vh;left:50%}
-  .panel{position:relative;left:auto;top:auto;bottom:auto;width:auto;margin:58vh 12px 16px;overflow:visible;padding:20px 16px 16px}
-  .zoomctl{top:auto;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;transform:none}
-  .zoomctl button{width:38px;height:38px}
-  #credits{max-width:none;right:64px;left:12px;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 12px);text-align:left}
-  body.fly{overflow:hidden}
-  body.fly #globe{transform:translateY(-8vh)}
-  .hud{left:12px;right:12px;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);max-width:none;transform:translateY(24px)}
   .lead{grid-template-columns:minmax(0,1fr)}
-  .calcard{left:12px;right:12px;width:auto;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateY(16px)}
-  body.calc .calcard{transform:none}
-  .pintip,body.fly .pintip{left:12px;right:62px;transform:none;top:calc(env(safe-area-inset-top,0px) + 40px);justify-content:space-between;border-radius:16px}
   .help,body.fly .help{left:12px;right:62px;transform:none;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 40px);border-radius:16px;font-size:12px;max-width:none;align-items:flex-start;padding:8px 8px 8px 12px}
   .help-open,body.fly .help-open{left:auto;right:12px;transform:none;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 150px);padding:0 10px}
   body:not(.fly) .help,body:not(.fly) .help-open{display:none}
-  body.pinning .help{display:none}
+  body.st-mini .help{left:12px;max-width:none}
+  .card[data-state=expanded] .cols{grid-template-columns:minmax(0,1fr)}
+  .card[data-state=expanded] .pair{grid-template-columns:minmax(0,1fr)}
 }
-@media (prefers-reduced-motion:reduce){ #globe,.panel,.hud,.loading,.hero,.calcard,.help,.help-open,.pintip{transition:none} .panel.reveal>*{animation:none} }
+@media (prefers-reduced-motion:reduce){
+  :root{--morph:0s}
+  #globe,.loading,#logo,.help,.help-open,.view,.view.on{transition:none}
+  .reveal,.track.indet .fill{animation:none}
+}
 </style>
 
-<script>document.body.classList.add("landing")</script>
-<div class="sky" aria-hidden="true">
-  <div class="stars s1"></div>
-  <div class="stars s2"></div>
-</div>
-<div class="sky" style="background:none" id="sky-globe"><div id="globe" aria-label="3D Earth"></div></div>
+<div class="sky" aria-hidden="true"><div class="stars s1"></div><div class="stars s2"></div></div>
+<div class="sky" style="background:none"><div id="globe" aria-label="3D Earth"></div></div>
 <div class="loading" id="g-loading">Loading 3D Earth…</div>
 <div id="credits"></div>
 
@@ -281,135 +272,160 @@ body:not(.fly) .help{max-width:calc(58vw - 90px)}
   <button type="button" class="glass" id="z-home" aria-label="Back to all of India">⌂</button>
 </div>
 
-<section class="hud glass" id="hud" aria-live="polite">
-  <span class="eyebrow" id="hud-eyebrow">Flying to</span>
-  <span class="name" id="hud-name">—</span>
-  <span class="coords" id="hud-coords"></span>
-  <span class="hint" id="hud-hint"></span>
-  <div class="acts">
-    <button type="button" class="btn primary" id="see-plan">See my solar plan</button>
-    <button type="button" class="btn ghost" id="adjust">Adjust pin</button>
-    <button type="button" class="btn ghost" id="again">Search again</button>
-  </div>
-</section>
-
-<section class="calcard glass" id="calc" aria-live="polite">
-  <span class="eyebrow">Your solar plan</span>
-  <span class="title" id="calc-step">Calculating…</span>
-  <div class="track" role="progressbar" aria-label="Calculating your solar plan"><div class="fill" id="calc-fill"></div></div>
-  <span class="sub" id="calc-sub"></span>
-</section>
-
-<div class="pintip glass" id="pintip" hidden>
-  <span>Tap your exact roof to move the pin</span>
-  <button type="button" class="btn ghost" id="pin-cancel">Cancel</button>
-</div>
-
 <div class="help glass" id="help" role="note">
   <span id="help-text"></span>
   <button type="button" class="x" id="help-x" aria-label="Hide map controls">×</button>
 </div>
 <button type="button" class="help-open glass" id="help-open" hidden aria-label="Show map controls">? Map controls</button>
 
-<section class="hero" id="hero">
+<div id="logo">
   <h1 class="logo"><span class="sun" aria-hidden="true"></span>SunSense</h1>
   <p class="sub">See how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.</p>
-  <form class="bar glass" id="find" role="search">
-    <input id="where" type="text" value="" placeholder="Enter your address or pincode" aria-label="Your address or pincode" autocomplete="street-address">
-    <button type="button" class="gps" id="gps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>Detect my location</button>
-    <button type="submit" class="go">Fly there</button>
-  </form>
-  <p class="msg" id="status" aria-live="polite"></p>
-</section>
+</div>
 
-<aside class="panel glass" id="panel">
-  <div class="brand">
-    <h2 class="mini"><span class="dot" aria-hidden="true"></span>SunSense</h2>
-    <span class="mode" id="mode">Calculated in your browser</span>
+<section class="card glass" id="card" data-state="search" aria-live="polite">
+
+  <!-- 1. search -->
+  <div class="view v-search on" id="v-search">
+    <form class="bar" id="find" role="search">
+      <input id="where" type="text" value="" placeholder="Enter your address or pincode" aria-label="Your address or pincode" autocomplete="street-address">
+      <button type="button" class="gps" id="gps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>Detect my location</button>
+      <button type="submit" class="go">Fly there</button>
+    </form>
+    <p id="status"></p>
   </div>
-  <p class="tag">How much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.</p>
 
-  <div class="here glass-2">
-    <span class="place" id="r-place">—</span>
-    <span class="coords" id="r-coords"></span>
+  <!-- 2. progress (detecting / finding / flying / calculating) -->
+  <div class="view v-progress" id="v-progress">
+    <span class="eyebrow" id="p-eyebrow"></span>
+    <span class="title" id="p-title"></span>
+    <div class="track" id="p-track" role="progressbar" aria-label="Progress"><div class="fill" id="p-fill"></div></div>
+    <span class="sub2" id="p-sub"></span>
+  </div>
+
+  <!-- 3. found -->
+  <div class="view v-found" id="v-found">
+    <span class="eyebrow" id="f-eyebrow">You are here</span>
+    <span class="title" id="f-name"></span>
+    <span class="coords" id="f-coords"></span>
+    <span class="hint" id="f-hint"></span>
     <div class="acts">
-      <button type="button" class="btn ghost" id="move-pin">Move pin</button>
-      <button type="button" class="btn ghost" id="change">Change</button>
+      <button type="button" class="btn primary" id="calc-btn">Calculate my solar plan</button>
+      <button type="button" class="btn ghost" id="adjust">Adjust pin</button>
+      <button type="button" class="btn ghost" id="again">Search again</button>
     </div>
   </div>
 
-  <form class="sheet glass-2" id="f" novalidate>
-    <h2>Your home</h2>
-    <div class="field">
-      <span class="lbl" id="use-l">Electricity use</span>
-      <div class="seg" role="group" aria-labelledby="use-l">
-        <button type="button" id="by-units" aria-pressed="true">Units / month</button>
-        <button type="button" id="by-bill" aria-pressed="false">Bill / month</button>
-      </div>
-      <div class="unit"><input id="use" type="number" min="0" step="1" value="250" aria-label="Monthly electricity use"><span id="use-u">kWh</span></div>
-      <span class="hint" id="use-h">From the "units consumed" line on your WBSEDCL bill.</span>
-    </div>
-    <div class="field">
-      <label for="roof">Free roof area</label>
-      <div class="unit"><input id="roof" type="number" min="0" step="1" value="30"><span>m²</span></div>
-      <span class="hint">Shade-free space only. About 10 m² per kW.</span>
-    </div>
-    <div class="field">
-      <span class="lbl" id="grid-l">Connection</span>
-      <div class="seg" role="group" aria-labelledby="grid-l">
-        <button type="button" id="on" aria-pressed="true">On-grid</button>
-        <button type="button" id="off" aria-pressed="false">Off-grid</button>
+  <!-- 4. results (normal + expanded) -->
+  <div class="view v-results" id="v-results">
+    <div class="rhead">
+      <span class="mini-logo"><span class="dot" aria-hidden="true"></span>SunSense</span>
+      <div class="tools">
+        <button type="button" class="tool" id="grow" aria-label="Make bigger" title="Make bigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path id="grow-path" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>
+        </button>
+        <button type="button" class="tool" id="shrink" aria-label="Minimise" title="Minimise">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+        </button>
       </div>
     </div>
-    <div class="field">
-      <div class="psh"><label for="psh">Sunlight</label><output id="psh-o" for="psh">4.5 h/day</output></div>
-      <input id="psh" type="range" min="3.5" max="6" step="0.05" value="4.5">
-      <span class="hint" id="psh-h">Peak sun hours. 4.5 is typical for southern Bengal.</span>
+    <div class="scroll" id="r-scroll">
+      <div class="here glass-2 rv">
+        <span class="place" id="r-place">—</span>
+        <span class="coords" id="r-coords"></span>
+        <div class="acts">
+          <button type="button" class="btn ghost" id="move-pin">Move pin</button>
+          <button type="button" class="btn ghost" id="change">Change</button>
+        </div>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <form class="sheet glass-2 rv" id="f" novalidate>
+            <h2>Your home</h2>
+            <div class="field">
+              <span class="lbl" id="use-l">Electricity use</span>
+              <div class="seg" role="group" aria-labelledby="use-l">
+                <button type="button" id="by-units" aria-pressed="true">Units / month</button>
+                <button type="button" id="by-bill" aria-pressed="false">Bill / month</button>
+              </div>
+              <div class="unit"><input id="use" type="number" min="0" step="1" value="250" aria-label="Monthly electricity use"><span id="use-u">kWh</span></div>
+              <span class="hint" id="use-h">From the "units consumed" line on your WBSEDCL bill.</span>
+            </div>
+            <div class="field">
+              <label for="roof">Free roof area</label>
+              <div class="unit"><input id="roof" type="number" min="0" step="1" value="30"><span>m²</span></div>
+              <span class="hint">Shade-free space only. About 10 m² per kW.</span>
+            </div>
+            <div class="field">
+              <span class="lbl" id="grid-l">Connection</span>
+              <div class="seg" role="group" aria-labelledby="grid-l">
+                <button type="button" id="on" aria-pressed="true">On-grid</button>
+                <button type="button" id="off" aria-pressed="false">Off-grid</button>
+              </div>
+            </div>
+            <div class="field">
+              <div class="psh"><label for="psh">Sunlight</label><output id="psh-o" for="psh">4.5 h/day</output></div>
+              <input id="psh" type="range" min="3.5" max="6" step="0.05" value="4.5">
+              <span class="hint" id="psh-h">Peak sun hours. 4.5 is typical for southern Bengal.</span>
+            </div>
+          </form>
+        </div>
+        <div class="col">
+          <section class="lead glass-2 rv">
+            <div class="payback" id="pb">4.1<small>years</small></div>
+            <div>
+              <div class="k">Payback</div>
+              <p id="lead-p"></p>
+            </div>
+            <div class="chips" id="chips"></div>
+          </section>
+          <div class="stats glass-2 rv">
+            <div class="stat hl"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></div>
+            <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s">kWh per year</span></div>
+            <div class="stat"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></div>
+            <div class="stat"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></div>
+            <div class="stat"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s">energy charge</span></div>
+            <div class="stat"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></div>
+          </div>
+          <div class="pair">
+            <div class="box glass-2 rv">
+              <h2>On your roof</h2>
+              <div class="roof" id="roofgrid"></div>
+              <p class="cap" id="roof-cap"></p>
+            </div>
+            <div class="box glass-2 rv">
+              <h2>25 years of savings</h2>
+              <svg class="chart" id="chart" viewBox="0 0 520 230" role="img" aria-label="Cumulative savings against net cost over 25 years"></svg>
+              <p class="cap" id="chart-cap"></p>
+            </div>
+          </div>
+          <details class="rv">
+            <summary>How this is calculated</summary>
+            <ul>
+              <li>Size = monthly units ÷ (30 × sun hours × 0.8), capped at roof area ÷ 10 m² per kW.</li>
+              <li>Generation = kW × sun hours × 365 × 0.8 (inverter, wiring, heat and dust losses).</li>
+              <li>Cost ₹55,000 per kW installed. Subsidy ₹30,000/kW for the first 2 kW, ₹18,000 for the 3rd, capped at ₹78,000. On-grid only.</li>
+              <li>Savings use WBSEDCL domestic slabs: ₹3.15 / 4.25 / 5.85 / 7.15 / 8.25 per unit for 0–75 / 76–125 / 126–200 / 201–400 / 400+ units. Fixed charge and duty are left out.</li>
+              <li>CO₂ = generation × 0.82 kg per kWh (CEA grid baseline). The 25-year line assumes no tariff rise and 0.5% panel ageing a year.</li>
+              <li>Off-grid battery cost isn't included yet.</li>
+            </ul>
+          </details>
+          <footer class="rv">Estimates only · confirm rates with WBSEDCL and pmsuryaghar.gov.in · <a href="https://github.com/sagnikvolt/SunSense">Source</a></footer>
+        </div>
+      </div>
     </div>
-  </form>
-
-  <section class="lead glass-2" aria-live="polite">
-    <div class="payback" id="pb">4.1<small>years</small></div>
-    <div>
-      <div class="k">Payback</div>
-      <p id="lead-p">A 2.3 kW system costs ₹61,100 after subsidy and saves about ₹14,940 a year.</p>
-    </div>
-    <div class="chips" id="chips"></div>
-  </section>
-
-  <div class="stats glass-2">
-    <div class="stat hl"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></div>
-    <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s">kWh per year</span></div>
-    <div class="stat"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></div>
-    <div class="stat"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></div>
-    <div class="stat"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s">energy charge</span></div>
-    <div class="stat"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></div>
   </div>
 
-  <div class="box glass-2">
-    <h2>On your roof</h2>
-    <div class="roof" id="roofgrid"></div>
-    <p class="cap" id="roof-cap"></p>
+  <!-- 5. minimised -->
+  <div class="view v-mini" id="v-mini">
+    <button type="button" class="pill" id="restore" aria-label="Open my solar plan">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="m-main" id="m-main">4.1 years</span>
+      <span class="m-sub" id="m-sub"></span>
+      <span class="tool" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>
+    </button>
   </div>
-  <div class="box glass-2">
-    <h2>25 years of savings</h2>
-    <svg class="chart" id="chart" viewBox="0 0 520 230" role="img" aria-label="Cumulative savings against net cost over 25 years"></svg>
-    <p class="cap" id="chart-cap"></p>
-  </div>
-
-  <details>
-    <summary>How this is calculated</summary>
-    <ul>
-      <li>Size = monthly units ÷ (30 × sun hours × 0.8), capped at roof area ÷ 10 m² per kW.</li>
-      <li>Generation = kW × sun hours × 365 × 0.8 (inverter, wiring, heat and dust losses).</li>
-      <li>Cost ₹55,000 per kW installed. Subsidy ₹30,000/kW for the first 2 kW, ₹18,000 for the 3rd, capped at ₹78,000. On-grid only.</li>
-      <li>Savings use WBSEDCL domestic slabs: ₹3.15 / 4.25 / 5.85 / 7.15 / 8.25 per unit for 0–75 / 76–125 / 126–200 / 201–400 / 400+ units. Fixed charge and duty are left out.</li>
-      <li>CO₂ = generation × 0.82 kg per kWh (CEA grid baseline). The 25-year line assumes no tariff rise and 0.5% panel ageing a year.</li>
-      <li>Off-grid battery cost isn't included yet.</li>
-    </ul>
-  </details>
-  <footer>Built for WeMakeDevs × AWS Environmental Hacks 2026 · <a href="https://github.com/sagnikvolt/SunSense">Source</a> · Estimates only. Confirm rates with WBSEDCL and pmsuryaghar.gov.in.</footer>
-</aside>
+</section>
 
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/";</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
@@ -417,7 +433,7 @@ body:not(.fly) .help{max-width:calc(58vw - 90px)}
 <script>
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
 const API_URL = "";
-// Cesium ion token for the 3D globe and Google geocoding. Restricted to this site's URLs on ion.cesium.com.
+// Cesium ion token for the 3D globe and Google geocoding. Restrict it to this site's URLs on ion.cesium.com.
 const CESIUM_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IkdIOGhQdHJpU1pxS21CUkgiLCJqdGkiOiI1OTNiMDA2NC00YTQ0LTQyMzUtOTNiZC05MTJlZWIxZTM3NWEiLCJpZCI6NTE3NzI4LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3OTE0NDk3NDh9.Th5sU0BanR53_VH1MWO5GrDKcLcA8_Q7unTgF7GtUWU";
 
 const C = {PR:0.8, M2_PER_KW:10, EF:0.82, COST_PER_KW:55000, STEP:0.05, MIN_KW:1, PANEL_KW:0.54,
@@ -539,9 +555,9 @@ async function geocode(q){
 // ---------- 3D Earth: CesiumJS + Google Photorealistic 3D Tiles ----------
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const narrow=()=>innerWidth<=860;
-const INDIA={lat:20.5,lng:82,h:23e6};
+const INDIA={lat:20.5,lng:82,get h(){ return innerWidth<=860 ? 33e6 : 23e6; }};
 const PITCH=-38, RANGE=1140;              // final view: 700 m up, 38° down
-let viewer=null, here=null, spinning=!reduce, orbit=null, searchSeq=0, pinEntity=null, pinning=false;
+let viewer=null, here=null, spinning=!reduce, orbit=null, searchSeq=0, pinEntity=null, pinning=false, pinMoved=false, cardState="search";
 const el=$("globe");
 
 const cesiumReady=(async()=>{
@@ -596,7 +612,8 @@ function stopOrbit(){
   orbit=null; viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 }
 
-function flyTo(lat,lng,tag){
+const FLIGHT=6;   // seconds, space → roof
+function flyTo(lat,lng,tag,onArrive){
   if(!viewer) return;
   stopOrbit(); spinning=false;
   viewer.entities.removeAll();
@@ -612,12 +629,9 @@ function flyTo(lat,lng,tag){
   const height=RANGE*Math.sin(Cesium.Math.toRadians(-PITCH));
   viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,height),
     orientation:{heading:0,pitch:Cesium.Math.toRadians(PITCH),roll:0},
-    duration:reduce?0:6, maximumHeight:2.2e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT,
+    duration:reduce?0:FLIGHT, maximumHeight:2.2e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT,
     complete:()=>{
-      $("hud-eyebrow").textContent="You are here";
-      $("hud-hint").textContent = here&&here.accuracy>25
-        ? `GPS is accurate to about ${Math.round(here.accuracy)} m. Tap “Adjust pin”, then your roof, to set it exactly.`
-        : "Not exactly your roof? Tap “Adjust pin”, then tap your roof.";
+      if(onArrive) onArrive();
       viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(ground)])
         .then(([p])=>p||ground).catch(()=>ground)
         .then(t=>{ pin.position=t; orbit={target:t,heading:0,auto:true}; aimOrbit(viewer); });
@@ -647,8 +661,8 @@ function fmtCoords(lat,lng){ return `${Math.abs(lat).toFixed(5)}°${lat>=0?"N":"
 function setPinning(on){
   pinning=on && !!pinEntity;
   document.body.classList.toggle("pinning",pinning);
-  $("pintip").hidden=!pinning;
   if(pinning && orbit) orbit.auto=false;
+  updatePinUI();
 }
 function onMapClick(pos){
   if(!pinning) return;
@@ -657,9 +671,9 @@ function onMapClick(pos){
   const c=Cesium.Cartographic.fromCartesian(p), lat=Cesium.Math.toDegrees(c.latitude), lng=Cesium.Math.toDegrees(c.longitude);
   pinEntity.position=p; pinEntity.label.text="Your roof";
   here={...here,lat,lng,pinned:true,accuracy:0};
-  $("r-coords").textContent=fmtCoords(lat,lng); $("hud-coords").textContent=fmtCoords(lat,lng);
-  $("hud-eyebrow").textContent="Pin set on your roof"; $("hud-hint").textContent="Your plan uses this exact spot. Tap “Adjust pin” again to move it.";
+  pinMoved=true;
   setPinning(false);
+  showCoords();
   if(API_URL) fetchSunlight(here);
 }
 function zoomToPoint(pos){
@@ -689,12 +703,9 @@ function recentre(){
     offset:new Cesium.HeadingPitchRange(0,Cesium.Math.toRadians(PITCH),RANGE),
     complete:()=>{ orbit={target:t,heading:0,auto:false}; aimOrbit(viewer); }});
 }
-$("adjust").onclick=()=>setPinning(!pinning);
-$("move-pin").onclick=()=>setPinning(!pinning);
-$("pin-cancel").onclick=()=>setPinning(false);
 addEventListener("keydown",e=>{
   if(e.target.closest && e.target.closest("input,textarea,select")) return;
-  if(!viewer || mode()==="landing" && !["+","=","-"].includes(e.key)) return;
+  if(!viewer || cardState==="search" && !["+","=","-"].includes(e.key)) return;
   const k=e.key; let used=true;
   if(k==="ArrowLeft") orbitStep(-0.12,0);
   else if(k==="ArrowRight") orbitStep(0.12,0);
@@ -721,106 +732,6 @@ showHelp(helpPref!=="0");
 $("help-x").onclick=()=>showHelp(false);
 $("help-open").onclick=()=>showHelp(true);
 
-// ---------- "See my solar plan": calculating hand-off, then the panel rises in ----------
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-function currentResult(){
-  const psh=+$("psh").value, raw=Math.max(+$("use").value||0,0), units=byBill?unitsFromBill(raw):raw, roof=Math.max(+$("roof").value||0,0);
-  return {psh,units,roof,r:calculate(units,roof,psh,type)};
-}
-function revealPanel(){
-  if(reduce) return;
-  const P=$("panel"); [...P.children].forEach((k,i)=>k.style.setProperty("--i",i));
-  P.classList.remove("reveal"); void P.offsetWidth; P.classList.add("reveal");
-  setTimeout(()=>P.classList.remove("reveal"),2000);
-}
-function countUp(v){
-  if(reduce||v==null) return;
-  const t0=performance.now(), d=1000;
-  const step=t=>{ const k=Math.min((t-t0)/d,1), e=1-Math.pow(1-k,3); $("pb").innerHTML=(v*e).toFixed(1)+"<small>years</small>"; if(k<1) requestAnimationFrame(step); };
-  requestAnimationFrame(step);
-}
-async function showPlan(){
-  if(mode()!=="fly") return;
-  setPinning(false);
-  const {psh,units,roof,r}=currentResult();
-  const steps=[
-    ["Reading sunlight for your roof",`${psh.toFixed(2).replace(/0$/,"")} peak sun hours a day`],
-    ["Sizing your system",`${Math.round(units)} units a month · ${roof} m² roof → ${r.kw} kW`],
-    ["Applying the PM Surya Ghar subsidy",`${inr(r.sub)} off ${inr(r.gross)}`],
-    ["Projecting 25 years of savings", r.payback!=null ? `Pays back in about ${r.payback.toFixed(1)} years` : "Working out your savings"]];
-  const F=$("calc-fill"); F.style.transition="none"; F.style.width="0%"; void F.offsetWidth;
-  setMode("calc");
-  const per=reduce?0:560;
-  F.style.transition=`width ${per*steps.length}ms cubic-bezier(.45,0,.25,1)`; F.style.width="100%";
-  for(const [t,sub] of steps){ $("calc-step").textContent=t+"…"; $("calc-sub").textContent=sub; await wait(per); }
-  if(mode()!=="calc") return;
-  setMode("plan"); if(narrow()) window.scrollTo({top:0});
-  revealPanel(); countUp(r.payback);
-}
-
-// ---------- page states: landing → fly (full screen) → calc → plan ----------
-function setMode(m){ document.body.classList.remove("landing","fly","calc","plan"); document.body.classList.add(m); if(m!=="fly"&&m!=="plan") setPinning(false); }
-const mode=()=>["landing","fly","calc","plan"].find(m=>document.body.classList.contains(m));
-function toLanding(){ setMode("landing"); goHome(); setTimeout(()=>{ $("where").focus(); $("where").select(); },reduce?0:600); }
-$("see-plan").onclick=showPlan;
-$("again").onclick=toLanding;
-$("change").onclick=toLanding;
-$("z-home").onclick=()=>{ if(mode()==="fly") toLanding(); else goHome(); };
-addEventListener("keydown",e=>{ if(e.key!=="Escape") return; if(pinning) setPinning(false); else if(mode()==="fly") showPlan(); });
-
-function goTo(g,ticket){
-  here=g;
-  const coords=`${Math.abs(g.lat).toFixed(3)}°${g.lat>=0?"N":"S"}  ${Math.abs(g.lng).toFixed(3)}°${g.lng>=0?"E":"W"}`;
-  $("r-place").textContent=g.label; $("r-coords").textContent=coords;
-  $("hud-name").textContent=g.label; $("hud-coords").textContent=coords; $("hud-eyebrow").textContent="Flying to"; $("hud-hint").textContent="";
-  $("status").textContent="";
-  const tag=g.tag||g.pincode||"Your home";
-  const go=()=>{ setMode("fly"); window.scrollTo({top:0}); flyTo(g.lat,g.lng,tag); };
-  if(viewer) go(); else cesiumReady.then(()=>{ if(ticket===searchSeq) go(); }).catch(()=>{ setMode("plan"); });
-  if(API_URL) fetchSunlight(g);
-}
-
-async function locate(q){
-  q=q.trim(); if(!q){ $("status").textContent="Type your address or pincode, or use Detect my location."; return; }
-  $("status").textContent="Finding…";
-  const ticket=++searchSeq;
-  try{
-    const g=await geocode(q);
-    if(ticket===searchSeq) goTo(g,ticket);
-  }catch(e){ if(ticket===searchSeq) $("status").textContent=e.message; }
-}
-
-// ---------- GPS: read the device location and fly straight there ----------
-function nearestPincode(lat,lng){
-  if(!PINS||!PINS.size) return null;
-  let best=null, bd=Infinity; const k=Math.cos(lat*Math.PI/180);
-  for(const [p,[la,lo]] of PINS){ const dx=(lo-lng)*k, dy=la-lat, d=dx*dx+dy*dy; if(d<bd){ bd=d; best=p; } }
-  const km=Math.sqrt(bd)*111.32;
-  return km<=15 ? {pincode:best,km} : null;
-}
-$("gps").onclick=()=>{
-  const btn=$("gps");
-  if(!("geolocation" in navigator)){ $("status").textContent="This browser can't share your location. Type your address instead."; return; }
-  if(!isSecureContext){ $("status").textContent="Location only works on a secure (https) page."; return; }
-  btn.setAttribute("aria-busy","true"); $("status").textContent="Finding you… allow location access if your browser asks.";
-  const ticket=++searchSeq;
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    btn.removeAttribute("aria-busy");
-    if(ticket!==searchSeq) return;
-    const {latitude:lat,longitude:lng,accuracy}=pos.coords;
-    await pinsReady;
-    const near=nearestPincode(lat,lng);
-    const label = near ? `Your location · near ${near.pincode}` : "Your location";
-    $("where").value = near ? near.pincode : "";
-    goTo({lat,lng,label,pincode:near?near.pincode:null,tag:"You",accuracy},ticket);
-  },err=>{
-    btn.removeAttribute("aria-busy");
-    $("status").textContent = err.code===1 ? "Location access is blocked. Allow it for this site in your browser settings, or type your address."
-      : err.code===3 ? "Finding your location took too long. Try again, or type your address."
-      : "Couldn't get your location. Type your address instead.";
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
-};
-
 async function fetchSunlight(g){
   try{
     const units=byBill?unitsFromBill(+$("use").value||0):(+$("use").value||0);
@@ -833,11 +744,227 @@ async function fetchSunlight(g){
   }catch(e){ $("psh-h").textContent="Couldn't get sunlight data: "+e.message+". Using the slider."; }
 }
 
-$("find").addEventListener("submit",e=>{ e.preventDefault(); locate($("where").value); });
-$("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(/^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
 
-if(API_URL) $("mode").textContent="Live data from AWS";
+// ---------- the shape-shifting card ----------
+const card=$("card"), logoEl=$("logo");
+const BODY_MODE={search:"landing",progress:"fly",found:"fly",calc:"fly",results:"plan",expanded:"plan",mini:"fly"};
+const VIEW={search:"v-search",progress:"v-progress",found:"v-found",calc:"v-progress",results:"v-results",expanded:"v-results",mini:"v-mini"};
+const STATES=Object.keys(VIEW);
+let lastBig="results";
+
+function measure(v,w){            // natural height of a view at a given card width
+  const s=v.style, ow=s.width, oh=s.height;
+  s.width=w+"px"; s.height="auto";
+  const h=v.offsetHeight; s.width=ow; s.height=oh;
+  return Math.ceil(h)+2;           // + border
+}
+function geom(st){
+  const W=innerWidth, H=innerHeight, v=$(VIEW[st]);
+  if(narrow()){
+    const w=W-24, l=12;
+    if(st==="results") { const h=Math.round(H*.58); return {l,t:H-12-h,w,h}; }
+    if(st==="expanded") return {l,t:12,w,h:H-24};
+    const h=measure(v,w); return {l,t:H-14-h,w,h};
+  }
+  const lx=Math.round(Math.min(Math.max(20,W*.06),104));
+  if(st==="search"){ const w=Math.min(560,Math.round(W*.42)), h=measure(v,w);
+    const lh=logoEl.offsetHeight, block=lh+24+h, top=Math.round((H-block)/2)+lh+24; return {l:lx,t:top,w,h}; }
+  if(st==="results")  return {l:20,t:20,w:Math.min(468,Math.round(W*.42)),h:H-40};
+  if(st==="expanded") return {l:20,t:20,w:Math.min(1060,W-100),h:H-40};
+  if(st==="mini"){ const w=Math.min(400,W-40), h=measure(v,w); return {l:20,t:H-20-h,w,h}; }
+  const w=Math.min(440,Math.round(W*.4)), h=measure(v,w);           // progress / found / calc
+  return {l:lx,t:Math.round((H-h)/2),w,h};
+}
+function place(instant){
+  const g=geom(cardState);
+  if(instant) card.style.transition="none";
+  Object.assign(card.style,{left:g.l+"px",top:g.t+"px",width:g.w+"px",height:g.h+"px"});
+  if(cardState==="search"){ logoEl.style.left=g.l+"px"; logoEl.style.top=(g.t-logoEl.offsetHeight-24)+"px"; logoEl.style.maxWidth=Math.max(g.w,320)+"px"; }
+  if(instant){ void card.offsetWidth; card.style.transition=""; }
+}
+function go(st){
+  cardState=st;
+  document.body.classList.remove(...STATES.map(s=>"st-"+s),"landing","fly","plan");
+  document.body.classList.add("st-"+st,BODY_MODE[st]);
+  card.dataset.state=st;
+  for(const id of new Set(Object.values(VIEW))){ const on=id===VIEW[st]; $(id).classList.toggle("on",on); $(id).inert=!on; }
+  if(st==="results"||st==="expanded") lastBig=st;
+  if(!["found","results","expanded"].includes(st) && pinning) setPinning(false);
+  updateGrowIcon();
+  place(false);
+}
+const refit=()=>place(false);
+addEventListener("resize",()=>place(true));
+document.fonts && document.fonts.ready.then(()=>place(true));
+
+// ---------- progress view ----------
+function progress({eyebrow,title,sub="",indet=true,dur=0},st="progress"){
+  $("p-eyebrow").textContent=eyebrow; $("p-title").textContent=title; $("p-sub").textContent=sub;
+  const tr=$("p-track"), f=$("p-fill");
+  tr.classList.toggle("indet",indet);
+  f.style.transition="none"; f.style.transform=""; f.style.width=indet?"":"0%"; void f.offsetWidth;
+  if(!indet){ f.style.transition=`width ${reduce?0:dur}ms cubic-bezier(.45,0,.25,1)`; f.style.width="100%"; }
+  if(cardState!==st) go(st); else refit();
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const shortName=s=>(s||"").split(",").slice(0,2).join(",");
+
+// ---------- found view + pin ----------
+function coordsText(){ return here ? fmtCoords(here.lat,here.lng) : ""; }
+function showCoords(){
+  $("f-coords").textContent=coordsText(); $("r-coords").textContent=coordsText();
+  if(pinMoved){ $("f-eyebrow").textContent="Pin set on your roof"; $("f-hint").textContent="Your plan uses this exact spot."; }
+  refit();
+}
+function updatePinUI(){
+  $("adjust").textContent = pinning ? "Cancel" : "Adjust pin";
+  $("adjust").classList.toggle("on",pinning);
+  $("move-pin").textContent = pinning ? "Cancel" : "Move pin";
+  $("move-pin").classList.toggle("on",pinning);
+  if(pinning){
+    $("f-hint").textContent="Tap your exact roof on the map to move the pin.";
+    $("r-coords").textContent="Tap your roof on the map";
+  } else {
+    $("r-coords").textContent=coordsText();
+    if(cardState==="found" && !pinMoved) $("f-hint").textContent=foundHint();
+  }
+  if(cardState==="found") refit();
+}
+function foundHint(){
+  return here&&here.accuracy>25
+    ? `GPS is accurate to about ${Math.round(here.accuracy)} m. Tap Adjust pin, then your roof, to set it exactly.`
+    : "Not exactly your roof? Tap Adjust pin, then tap your roof.";
+}
+function arrive(){
+  $("f-eyebrow").textContent = here.gps ? "Found your location" : "You are here";
+  $("f-name").textContent=here.label;
+  $("f-hint").textContent=foundHint();
+  showCoords();
+  go("found");
+}
+$("adjust").onclick=()=>setPinning(!pinning);
+$("move-pin").onclick=()=>setPinning(!pinning);
+
+// ---------- search → fly ----------
+function goTo(g,ticket){
+  here=g; pinMoved=false;
+  $("r-place").textContent=g.label;
+  const tag=g.tag||g.pincode||"Your home";
+  const fly=()=>{
+    progress({eyebrow:g.gps?"Found your location":"Flying to",title:shortName(g.label),sub:fmtCoords(g.lat,g.lng),indet:false,dur:FLIGHT*1000});
+    flyTo(g.lat,g.lng,tag,()=>{ if(ticket===searchSeq) arrive(); });
+  };
+  if(viewer) fly(); else cesiumReady.then(()=>{ if(ticket===searchSeq) fly(); }).catch(()=>{ if(ticket===searchSeq) arrive(); });
+  if(API_URL) fetchSunlight(g);
+}
+function backToSearch(msg){ $("status").textContent=msg||""; go("search"); }
+async function locate(q){
+  q=q.trim();
+  if(!q){ $("status").textContent="Type your address or pincode, or use Detect my location."; refit(); return; }
+  $("status").textContent="";
+  const ticket=++searchSeq;
+  progress({eyebrow:"Searching",title:`Finding “${q}”`,sub:"Looking up the address"});
+  try{
+    const g=await geocode(q);
+    if(ticket===searchSeq) goTo(g,ticket);
+  }catch(e){ if(ticket===searchSeq) backToSearch(e.message); }
+}
+function toLanding(){
+  searchSeq++; go("search"); goHome();
+  setTimeout(()=>{ $("where").focus(); $("where").select(); },reduce?0:500);
+}
+$("again").onclick=toLanding;
+$("change").onclick=toLanding;
+$("z-home").onclick=()=>{ if(["progress","found","calc"].includes(cardState)) toLanding(); else goHome(); };
+
+// ---------- GPS ----------
+function nearestPincode(lat,lng){
+  if(!PINS||!PINS.size) return null;
+  let best=null, bd=Infinity; const k=Math.cos(lat*Math.PI/180);
+  for(const [p,[la,lo]] of PINS){ const dx=(lo-lng)*k, dy=la-lat, d=dx*dx+dy*dy; if(d<bd){ bd=d; best=p; } }
+  return Math.sqrt(bd)*111.32<=15 ? best : null;
+}
+$("gps").onclick=()=>{
+  if(!("geolocation" in navigator)){ $("status").textContent="This browser can't share your location. Type your address instead."; refit(); return; }
+  if(!isSecureContext){ $("status").textContent="Location only works on a secure (https) page."; refit(); return; }
+  $("status").textContent="";
+  const ticket=++searchSeq;
+  progress({eyebrow:"Location",title:"Detecting your location…",sub:"Allow location access if your browser asks"});
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    if(ticket!==searchSeq) return;
+    const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+    await pinsReady;
+    const pc=nearestPincode(lat,lng);
+    $("where").value=pc||"";
+    goTo({lat,lng,label:pc?`Your location · near ${pc}`:"Your location",pincode:pc,tag:"You",accuracy,gps:true},ticket);
+  },err=>{
+    if(ticket!==searchSeq) return;
+    backToSearch(err.code===1 ? "Location access is blocked. Allow it for this site in your browser settings, or type your address."
+      : err.code===3 ? "Finding your location took too long. Try again, or type your address."
+      : "Couldn't get your location. Type your address instead.");
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+};
+
+// ---------- calculate → results ----------
+function currentResult(){
+  const psh=+$("psh").value, raw=Math.max(+$("use").value||0,0), units=byBill?unitsFromBill(raw):raw, roof=Math.max(+$("roof").value||0,0);
+  return {psh,units,roof,r:calculate(units,roof,psh,type)};
+}
+function reveal(){
+  if(reduce) return;
+  const items=[...card.querySelectorAll(".rv")];
+  items.forEach((k,i)=>{ k.style.setProperty("--i",i); k.classList.remove("reveal"); });
+  void card.offsetWidth; items.forEach(k=>k.classList.add("reveal"));
+  setTimeout(()=>items.forEach(k=>k.classList.remove("reveal")),2200);
+}
+function countUp(v){
+  if(reduce||v==null) return;
+  const t0=performance.now()+250, d=1000;
+  const step=t=>{ const k=Math.max(0,Math.min((t-t0)/d,1)), e=1-Math.pow(1-k,3); $("pb").innerHTML=(v*e).toFixed(1)+"<small>years</small>"; if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+$("calc-btn").onclick=async()=>{
+  setPinning(false);
+  const {psh,units,roof,r}=currentResult();
+  const steps=[
+    ["Reading sunlight for your roof",`${psh.toFixed(2).replace(/0$/,"")} peak sun hours a day`],
+    ["Sizing your system",`${Math.round(units)} units a month · ${roof} m² roof → ${r.kw} kW`],
+    ["Applying the PM Surya Ghar subsidy",`${inr(r.sub)} off ${inr(r.gross)}`],
+    ["Projecting 25 years of savings", r.payback!=null ? `Pays back in about ${r.payback.toFixed(1)} years` : "Working out your savings"]];
+  const per=reduce?0:600;
+  progress({eyebrow:"Your solar plan",title:steps[0][0]+"…",sub:steps[0][1],indet:false,dur:per*steps.length},"calc");
+  for(const [t,sub] of steps){ $("p-title").textContent=t+"…"; $("p-sub").textContent=sub; await wait(per); if(cardState!=="calc") return; }
+  $("r-scroll").scrollTop=0;
+  go("results"); reveal(); countUp(r.payback);
+};
+
+// ---------- expand / minimise ----------
+function updateGrowIcon(){
+  const big=cardState==="expanded";
+  $("grow-path").setAttribute("d", big ? "M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" : "M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7");
+  $("grow").setAttribute("aria-label", big?"Make smaller":"Make bigger"); $("grow").title=big?"Make smaller":"Make bigger";
+}
+$("grow").onclick=()=>go(cardState==="expanded"?"results":"expanded");
+$("shrink").onclick=()=>{
+  const {r}=currentResult();
+  $("m-main").textContent = r.payback!=null ? `${r.payback.toFixed(1)} yr payback` : `${r.kw} kW`;
+  $("m-sub").textContent = `${r.kw} kW · ${inr(r.save)}/yr · ${shortName($("r-place").textContent)}`;
+  go("mini");
+};
+$("restore").onclick=()=>go(lastBig);
+
+addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  if(pinning) setPinning(false);
+  else if(cardState==="expanded") go("results");
+  else if(cardState==="mini") go(lastBig);
+});
+
+$("find").addEventListener("submit",e=>{ e.preventDefault(); locate($("where").value); });
+$("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(cardState==="search" && /^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
+
 render();
+go("search");
 </script>
 
 </body>
