@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SunSense - rooftop solar sizing & payback API (Lambda + HTTP API + S3 cache)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 25
+    MemorySize: 256
+    Architectures: [arm64]
+
+Resources:
+  IrradianceCache:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CalculateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: handler.lambda_handler
+      Environment:
+        Variables:
+          CACHE_BUCKET: !Ref IrradianceCache
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref IrradianceCache
+      Events:
+        Calculate:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SunSenseApi
+            Path: /calculate
+            Method: POST
+
+  SunSenseApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: [POST, OPTIONS]
+        AllowHeaders: [Content-Type]
+
+Outputs:
+  ApiUrl:
+    Description: POST your JSON here
+    Value: !Sub "https://${SunSenseApi}.execute-api.${AWS::Region}.amazonaws.com/calculate"
+  CacheBucket:
+    Value: !Ref IrradianceCache

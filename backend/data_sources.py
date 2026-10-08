@@ -1,0 +1,159 @@
+"""
+Location -> peak sun hours.
+
+  pincode  --(OpenStreetMap Nominatim)-->  lat/lon
+  lat/lon  --(NASA POWER climatology, PVGIS fallback)-->  peak sun hours
+
+Results are cached in S3 when CACHE_BUCKET is set (Lambda), otherwise in a
+local dict so it also works on your laptop. Standard library only, plus boto3
+which the Lambda Python runtime already includes.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import urllib.parse
+import urllib.request
+
+USER_AGENT = "SunSense/0.1 (WeMakeDevs Environmental Hacks; github.com/sagnikvolt/SunSense)"
+TIMEOUT = 8  # seconds per upstream call; Lambda timeout is set higher in template.yaml
+
+CACHE_BUCKET = os.environ.get("CACHE_BUCKET")
+_local_cache: dict[str, dict] = {}
+_s3 = None
+
+
+# ---------------------------------------------------------------------------
+# Cache (S3 in Lambda, dict locally)
+# ---------------------------------------------------------------------------
+
+def _s3_client():
+    global _s3
+    if _s3 is None:
+        import boto3  # available in the Lambda runtime
+        _s3 = boto3.client("s3")
+    return _s3
+
+
+def cache_get(key: str) -> dict | None:
+    if key in _local_cache:
+        return _local_cache[key]
+    if not CACHE_BUCKET:
+        return None
+    try:
+        obj = _s3_client().get_object(Bucket=CACHE_BUCKET, Key=key)
+        value = json.loads(obj["Body"].read())
+        _local_cache[key] = value
+        return value
+    except Exception:
+        return None
+
+
+def cache_put(key: str, value: dict) -> None:
+    _local_cache[key] = value
+    if not CACHE_BUCKET:
+        return
+    try:
+        _s3_client().put_object(Bucket=CACHE_BUCKET, Key=key,
+                                Body=json.dumps(value).encode(),
+                                ContentType="application/json")
+    except Exception:
+        pass  # cache is best-effort; never fail a request because of it
+
+
+# ---------------------------------------------------------------------------
+# HTTP
+# ---------------------------------------------------------------------------
+
+def _get_json(url: str) -> dict | list:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        return json.loads(r.read())
+
+
+# ---------------------------------------------------------------------------
+# Pincode -> lat/lon
+# ---------------------------------------------------------------------------
+
+def geocode_pincode(pincode: str) -> dict:
+    pincode = str(pincode).strip()
+    if not (pincode.isdigit() and len(pincode) == 6):
+        raise ValueError("pincode must be 6 digits")
+
+    key = f"geocode/{pincode}.json"
+    if (hit := cache_get(key)):
+        return hit
+
+    q = urllib.parse.urlencode({"postalcode": pincode, "country": "India",
+                                "format": "json", "limit": 1})
+    results = _get_json(f"https://nominatim.openstreetmap.org/search?{q}")
+    if not results:
+        raise LookupError(f"could not find pincode {pincode}")
+
+    place = {"lat": round(float(results[0]["lat"]), 4),
+             "lon": round(float(results[0]["lon"]), 4),
+             "place": results[0].get("display_name", "")}
+    cache_put(key, place)
+    return place
+
+
+# ---------------------------------------------------------------------------
+# lat/lon -> peak sun hours
+# ---------------------------------------------------------------------------
+
+def _nasa_power_psh(lat: float, lon: float) -> float:
+    """Annual mean all-sky horizontal irradiance, kWh/m²/day (= peak sun hours)."""
+    q = urllib.parse.urlencode({"parameters": "ALLSKY_SFC_SW_DWN", "community": "RE",
+                                "latitude": lat, "longitude": lon, "format": "JSON"})
+    data = _get_json(f"https://power.larc.nasa.gov/api/temporal/climatology/point?{q}")
+    ann = data["properties"]["parameter"]["ALLSKY_SFC_SW_DWN"]["ANN"]
+    if ann is None or ann < 0:  # NASA uses -999 for missing
+        raise ValueError("NASA POWER returned no data")
+    return float(ann)
+
+
+def _pvgis_psh(lat: float, lon: float) -> float:
+    """PVGIS optimal-tilt in-plane irradiation, kWh/m²/yr ÷ 365."""
+    q = urllib.parse.urlencode({"lat": lat, "lon": lon, "peakpower": 1, "loss": 14,
+                                "optimalangles": 1, "outputformat": "json"})
+    data = _get_json(f"https://re.jrc.ec.europa.eu/api/v5_3/PVcalc?{q}")
+    h_year = data["outputs"]["totals"]["fixed"]["H(i)_y"]
+    return float(h_year) / 365
+
+
+def peak_sun_hours(lat: float, lon: float) -> dict:
+    lat, lon = round(float(lat), 2), round(float(lon), 2)  # ~1 km grid, good cache hits
+    key = f"irradiance/{lat}_{lon}.json"
+    if (hit := cache_get(key)):
+        return hit
+
+    for source, fn in (("NASA POWER", _nasa_power_psh), ("PVGIS", _pvgis_psh)):
+        try:
+            result = {"peak_sun_hours": round(fn(lat, lon), 2), "source": source}
+            cache_put(key, result)
+            return result
+        except Exception:
+            continue
+    # both APIs down: let calculate() fall back to its default, and say so
+    return {"peak_sun_hours": None, "source": "default (irradiance APIs unavailable)"}
+
+
+def resolve_location(pincode: str | None = None, lat=None, lon=None) -> dict:
+    """Return a `location` dict ready for calculator.calculate()."""
+    location: dict = {}
+    if lat is None or lon is None:
+        if not pincode:
+            raise ValueError("give either pincode or lat and lon")
+        location.update(geocode_pincode(pincode))
+        location["pincode"] = str(pincode)
+    else:
+        location.update({"lat": float(lat), "lon": float(lon)})
+    location.update(peak_sun_hours(location["lat"], location["lon"]))
+    return location
+
+
+if __name__ == "__main__":
+    import sys
+    print(json.dumps(resolve_location(pincode=sys.argv[1] if len(sys.argv) > 1 else "700089"),
+                     indent=2, ensure_ascii=False))

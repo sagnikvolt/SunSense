@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>SunSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-pane tool. Inputs on the left as a "site survey" sheet, results on the right led by payback, then the roof panel plan and a 25-year cash line. Stacks at phone width. */
+:root{
+  --bg:#eef2f8;          /* overcast sky, blue-biased neutral */
+  --surface:#ffffff;
+  --ink:#14213a;         /* PV cell navy */
+  --muted:#5a6884;
+  --line:#d5dceb;
+  --cell:#1f3f73;        /* panel cells */
+  --cell-2:#2c5596;
+  --sun:#f2a900;         /* the one accent: sunlight */
+  --sun-ink:#7a5200;
+  --good:#1d7a4f;
+  --warn:#b35c00;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1322;--surface:#131d31;--ink:#e6ecf7;--muted:#97a5c2;--line:#26334d;
+  --cell:#2b5aa3;--cell-2:#3a6fc2;--sun:#ffbe2e;--sun-ink:#ffd36b;--good:#4cc28a;--warn:#ff9f43;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1322;--surface:#131d31;--ink:#e6ecf7;--muted:#97a5c2;--line:#26334d;
+  --cell:#2b5aa3;--cell-2:#3a6fc2;--sun:#ffbe2e;--sun-ink:#ffd36b;--good:#4cc28a;--warn:#ff9f43;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body);padding:24px 16px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:24px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{font:700 clamp(28px,4vw,40px)/1.05 var(--f-display);letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:10px}
+h1 .dot{width:.62em;height:.62em;border-radius:50%;background:var(--sun);box-shadow:0 0 0 6px color-mix(in srgb,var(--sun) 22%,transparent)}
+.tag{color:var(--muted);margin:0;max-width:52ch}
+.mode{font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 10px}
+
+.grid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:18px}
+.sheet h2,.panel h2{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.field{display:grid;gap:6px}
+label,.lbl{font-weight:600;font-size:15px}
+.hint{font-size:13px;color:var(--muted)}
+input[type=text],input[type=number]{width:100%;font:500 17px var(--f-mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.unit{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}
+.unit span{font:500 14px var(--f-mono);color:var(--muted);min-width:4.5ch}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:600 14px var(--f-body);background:transparent;color:var(--muted);border:0;padding:9px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+input[type=range]{width:100%;accent-color:var(--sun)}
+.psh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.psh output{font:500 17px var(--f-mono)}
+.lookup{font:600 14px var(--f-body);border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer}
+.lookup:disabled{opacity:.45;cursor:not-allowed}
+.status{font-size:13px;color:var(--muted);min-height:1.3em;margin:0}
+
+.results{display:grid;gap:20px;min-width:0}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 28px;align-items:center}
+@media (max-width:520px){.lead{grid-template-columns:minmax(0,1fr)}}
+.payback{font:700 clamp(56px,9vw,88px)/.9 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.payback small{font-size:.32em;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px}
+.lead p{margin:0;max-width:46ch}
+.lead .k{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;grid-column:1/-1}
+.chip{font:500 12px var(--f-mono);padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+.chip.good{border-color:var(--good);color:var(--good)}
+
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+@media (max-width:620px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;gap:2px}
+.stat .k{font-size:13px;color:var(--muted)}
+.stat .v{font:500 22px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat .s{font-size:12px;color:var(--muted)}
+.stat.hl .v{color:var(--sun-ink)}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px}
+@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:12px;min-width:0}
+.roof{display:grid;gap:4px;padding:10px;border-radius:6px;background:repeating-linear-gradient(135deg,var(--bg) 0 6px,transparent 6px 12px);border:1px dashed var(--line)}
+.pv{aspect-ratio:1/1.7;border-radius:2px;background:linear-gradient(var(--cell-2),var(--cell));position:relative;max-width:100%}
+.pv::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 48%,color-mix(in srgb,var(--bg) 40%,transparent) 48% 52%,transparent 52%),linear-gradient(transparent 32%,color-mix(in srgb,var(--bg) 30%,transparent) 32% 34%,transparent 34% 65%,color-mix(in srgb,var(--bg) 30%,transparent) 65% 67%,transparent 67%)}
+.cap{font-size:13px;color:var(--muted);margin:0}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font:11px var(--f-mono)}
+details{font-size:14px;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600;color:var(--ink)}
+details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
+footer{font-size:13px;color:var(--muted)}
+footer a{color:inherit}
+@media (prefers-reduced-motion:no-preference){.pv{transition:opacity .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="dot" aria-hidden="true"></span>SunSense</h1>
+      <p class="tag">How much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.</p>
+    </div>
+    <span class="mode" id="mode">Calculated in your browser</span>
+  </header>
+
+  <div class="grid">
+    <form class="sheet" id="f" novalidate>
+      <h2>Your home</h2>
+
+      <div class="field">
+        <label for="pincode">Pincode</label>
+        <input id="pincode" type="text" inputmode="numeric" maxlength="6" value="700089" autocomplete="postal-code">
+        <button type="button" class="lookup" id="lookup">Get sunlight for this pincode</button>
+        <p class="status" id="status"></p>
+      </div>
+
+      <div class="field">
+        <span class="lbl" id="use-l">Electricity use</span>
+        <div class="seg" role="group" aria-labelledby="use-l">
+          <button type="button" id="by-units" aria-pressed="true">Units / month</button>
+          <button type="button" id="by-bill" aria-pressed="false">Bill / month</button>
+        </div>
+        <div class="unit"><input id="use" type="number" min="0" step="1" value="250" aria-label="Monthly electricity use"><span id="use-u">kWh</span></div>
+        <span class="hint" id="use-h">From the "units consumed" line on your WBSEDCL bill.</span>
+      </div>
+
+      <div class="field">
+        <label for="roof">Free roof area</label>
+        <div class="unit"><input id="roof" type="number" min="0" step="1" value="30"><span>m²</span></div>
+        <span class="hint">Shade-free space only. About 10 m² per kW.</span>
+      </div>
+
+      <div class="field">
+        <span class="lbl" id="grid-l">Connection</span>
+        <div class="seg" role="group" aria-labelledby="grid-l">
+          <button type="button" id="on" aria-pressed="true">On-grid</button>
+          <button type="button" id="off" aria-pressed="false">Off-grid</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="psh"><label for="psh">Sunlight</label><output id="psh-o" for="psh">4.5 h/day</output></div>
+        <input id="psh" type="range" min="3.5" max="6" step="0.05" value="4.5">
+        <span class="hint" id="psh-h">Peak sun hours. 4.5 is a typical figure for southern Bengal; look up your pincode for the exact value.</span>
+      </div>
+    </form>
+
+    <section class="results" aria-live="polite">
+      <div class="lead">
+        <div class="payback" id="pb">4.1<small>years</small></div>
+        <div>
+          <div class="k">Payback</div>
+          <p id="lead-p">A 2.3 kW system costs ₹61,100 after subsidy and saves about ₹14,940 a year.</p>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat hl"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></div>
+        <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s">kWh per year</span></div>
+        <div class="stat"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></div>
+        <div class="stat"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></div>
+        <div class="stat"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></div>
+        <div class="stat"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s">energy charge</span></div>
+      </div>
+
+      <div class="two">
+        <div class="panel">
+          <h2>On your roof</h2>
+          <div class="roof" id="roofgrid"></div>
+          <p class="cap" id="roof-cap"></p>
+        </div>
+        <div class="panel">
+          <h2>25 years of savings</h2>
+          <svg class="chart" id="chart" viewBox="0 0 520 230" role="img" aria-label="Cumulative savings against net cost over 25 years"></svg>
+          <p class="cap" id="chart-cap"></p>
+        </div>
+      </div>
+
+      <details>
+        <summary>How this is calculated</summary>
+        <ul>
+          <li>Size = monthly units ÷ (30 × sun hours × 0.8), capped at roof area ÷ 10 m² per kW.</li>
+          <li>Generation = kW × sun hours × 365 × 0.8 (inverter, wiring, heat and dust losses).</li>
+          <li>Cost ₹55,000 per kW installed. Subsidy ₹30,000/kW for the first 2 kW, ₹18,000 for the 3rd, capped at ₹78,000. On-grid only.</li>
+          <li>Savings use WBSEDCL domestic slabs: ₹3.15 / 4.25 / 5.85 / 7.15 / 8.25 per unit for 0–75 / 76–125 / 126–200 / 201–400 / 400+ units. Fixed charge and duty are left out.</li>
+          <li>CO₂ = generation × 0.82 kg per kWh (CEA grid baseline). The 25-year line assumes no tariff rise and 0.5% panel ageing a year.</li>
+          <li>Off-grid battery cost isn't included yet.</li>
+        </ul>
+      </details>
+    </section>
+  </div>
+
+  <footer>Built for WeMakeDevs × AWS Environmental Hacks 2026 · <a href="https://github.com/sagnikvolt/SunSense">Source on GitHub</a> · Estimates only. Confirm rates with WBSEDCL and pmsuryaghar.gov.in.</footer>
+</div>
+
+<script>
+// Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
+const API_URL = "";
+
+const C = {PR:0.8, M2_PER_KW:10, EF:0.82, COST_PER_KW:55000, STEP:0.05, MIN_KW:1, PANEL_KW:0.54,
+  SLABS:[[75,3.15],[125,4.25],[200,5.85],[400,7.15],[Infinity,8.25]]};
+
+function energyCharge(u){ if(u<=0) return 0; let c=0,lo=0; for(const [up,r] of C.SLABS){ if(u<=lo) break; c+=(Math.min(u,up)-lo)*r; lo=up;} return c; }
+function unitsFromBill(b){ if(b<=0) return 0; let rem=b,lo=0; for(const [up,r] of C.SLABS){ const cost=(up-lo)*r; if(rem<=cost) return lo+rem/r; rem-=cost; lo=up;} return lo; }
+function subsidy(kw,type){ if(type!=="on-grid"||kw<=0) return 0; return Math.min(Math.min(kw,2)*30000+Math.max(Math.min(kw,3)-2,0)*18000,78000); }
+function calculate(units,roof,psh,type){
+  const cap=roof/C.M2_PER_KW, need=psh>0?units/(30*psh*C.PR):0;
+  const kw=Math.round(Math.min(need,cap)/C.STEP)*C.STEP;
+  const gen=kw*psh*365*C.PR, gross=kw*C.COST_PER_KW, sub=Math.min(subsidy(kw,type),gross), net=gross-sub;
+  const before=energyCharge(units), after=energyCharge(Math.max(units-gen/12,0)), save=(before-after)*12;
+  return {kw:+kw.toFixed(2), limited:need>cap, small:kw<C.MIN_KW, gen, gross, sub, net, before, after, save,
+          payback: save>0? net/save : null, co2: gen*C.EF};
+}
+
+const $=id=>document.getElementById(id);
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const fmt=n=>Math.round(n).toLocaleString("en-IN");
+let byBill=false, type="on-grid";
+
+function press(a,b){ a.setAttribute("aria-pressed","true"); b.setAttribute("aria-pressed","false"); }
+$("by-units").onclick=()=>{ if(!byBill) return; const u=+$("use").value||0; byBill=false; press($("by-units"),$("by-bill"));
+  $("use").value=Math.round(unitsFromBill(u)); $("use-u").textContent="kWh"; $("use-h").textContent='From the "units consumed" line on your WBSEDCL bill.'; render(); };
+$("by-bill").onclick=()=>{ if(byBill) return; const u=+$("use").value||0; byBill=true; press($("by-bill"),$("by-units"));
+  $("use").value=Math.round(energyCharge(u)); $("use-u").textContent="₹"; $("use-h").textContent="Energy charge on your monthly bill, before fixed charge and duty."; render(); };
+$("on").onclick=()=>{ type="on-grid"; press($("on"),$("off")); render(); };
+$("off").onclick=()=>{ type="off-grid"; press($("off"),$("on")); render(); };
+["use","roof","psh"].forEach(id=>$(id).addEventListener("input",render));
+$("f").addEventListener("submit",e=>e.preventDefault());
+
+function render(){
+  const psh=+$("psh").value; $("psh-o").textContent=psh.toFixed(2).replace(/0$/,"")+" h/day";
+  const raw=Math.max(+$("use").value||0,0), units=byBill?unitsFromBill(raw):raw, roof=Math.max(+$("roof").value||0,0);
+  const r=calculate(units,roof,psh,type);
+
+  $("pb").innerHTML = r.payback==null ? "—<small>years</small>" : r.payback.toFixed(1)+"<small>years</small>";
+  $("lead-p").textContent = r.kw<=0 ? "Enter your electricity use and roof area to size a system."
+    : `A ${r.kw} kW system costs ${inr(r.net)} after subsidy and saves about ${inr(r.save)} a year.`;
+  const chips=[];
+  if(r.limited) chips.push(['warn',`Roof limits size (needs ${(units/(30*psh*C.PR)).toFixed(1)} kW)`]);
+  if(r.small && r.kw>0) chips.push(['warn','Under 1 kW. Installers may not quote this small']);
+  if(type==="off-grid") chips.push(['warn','No subsidy for off-grid. Battery cost not included']);
+  if(r.after<1 && r.kw>0) chips.push(['good','Covers your whole energy charge']);
+  $("chips").innerHTML=chips.map(([c,t])=>`<span class="chip ${c}">${t}</span>`).join("");
+
+  const panels=Math.max(Math.ceil(r.kw/C.PANEL_KW),0);
+  $("s-kw").textContent=r.kw+" kW"; $("s-panels").textContent=`≈ ${panels} panel${panels===1?"":"s"} of 540 W`;
+  $("s-gen").textContent=fmt(r.gen); $("s-co2").textContent=(r.co2/1000).toFixed(1)+" t";
+  $("s-gross").textContent=inr(r.gross); $("s-sub").textContent=inr(r.sub);
+  $("s-bill").textContent=`${inr(r.before)} → ${inr(r.after)}`;
+
+  // roof plan: panels vs usable area
+  const cols=Math.max(Math.min(Math.ceil(Math.sqrt(Math.max(roof/2.6,1))*1.4),10),3);
+  const slots=Math.max(Math.floor(roof/2.6),panels); // ~2.6 m² per 540 W panel incl. spacing
+  const g=$("roofgrid"); g.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;
+  g.innerHTML=Array.from({length:Math.min(slots,60)},(_,i)=>`<div class="pv" style="opacity:${i<panels?1:.12}"></div>`).join("");
+  $("roof-cap").textContent = roof>0 ? `${panels} panels on about ${Math.round(panels*2.6)} m² of your ${fmt(roof)} m² roof.` : "Add your roof area.";
+
+  drawChart(r);
+}
+
+function drawChart(r){
+  const W=520,H=230,L=58,R=12,T=14,B=30, yrs=25;
+  const cum=[0]; for(let y=1;y<=yrs;y++) cum.push(cum[y-1]+r.save*Math.pow(0.995,y-1));
+  const max=Math.max(cum[yrs],r.net,1), step=niceStep(max/4), top=Math.ceil(max/step)*step;
+  const x=y=>L+(W-L-R)*y/yrs, yv=v=>T+(H-T-B)*(1-v/top);
+  let s="";
+  for(let v=0;v<=top+1;v+=step){ s+=`<line x1="${L}" x2="${W-R}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--line)"/>`;
+    s+=`<text x="${L-6}" y="${yv(v)+4}" text-anchor="end">${v>=1e5?(v/1e5).toFixed(v%1e5?1:0)+"L":Math.round(v/1000)+"k"}</text>`; }
+  for(const y of [0,5,10,15,20,25]) s+=`<text x="${x(y)}" y="${H-10}" text-anchor="middle">${y}y</text>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${yv(r.net)}" y2="${yv(r.net)}" stroke="var(--ink)" stroke-dasharray="4 4"/>`;
+  s+=`<text x="${W-R}" y="${yv(r.net)-6}" text-anchor="end" style="fill:var(--ink)">your cost ${inr(r.net)}</text>`;
+  const pts=cum.map((v,i)=>`${x(i)},${yv(v)}`).join(" ");
+  s+=`<polygon points="${x(0)},${yv(0)} ${pts} ${x(yrs)},${yv(0)}" fill="var(--sun)" fill-opacity=".18"/>`;
+  s+=`<polyline points="${pts}" fill="none" stroke="var(--sun)" stroke-width="2.5"/>`;
+  if(r.payback!=null && r.payback<=yrs){ s+=`<circle cx="${x(r.payback)}" cy="${yv(r.net)}" r="5" fill="var(--sun)" stroke="var(--surface)" stroke-width="2"/>`; }
+  s+=`<circle cx="${x(yrs)}" cy="${yv(cum[yrs])}" r="4" fill="var(--sun)"/>`;
+  $("chart").innerHTML=s;
+  $("chart-cap").textContent = r.save>0 ? `About ${inr(cum[yrs])} saved over 25 years, ${inr(cum[yrs]-r.net)} more than you paid.` : "";
+}
+function niceStep(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); for(const m of [1,2,2.5,5,10]) if(m*p>=v) return m*p; return 10*p; }
+
+$("lookup").onclick=async()=>{
+  const pc=$("pincode").value.trim();
+  if(!/^\d{6}$/.test(pc)){ $("status").textContent="Enter a 6-digit pincode."; return; }
+  if(!API_URL){ $("status").textContent="Live sunlight lookup turns on once the AWS API is deployed. Using the slider value for now."; return; }
+  $("status").textContent="Looking up sunlight data…"; $("lookup").disabled=true;
+  try{
+    const units=byBill?unitsFromBill(+$("use").value||0):(+$("use").value||0);
+    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({pincode:pc,monthly_units:units,roof_area:+$("roof").value||0,system_type:type})});
+    const d=await res.json(); if(!res.ok) throw new Error(d.error||"lookup failed");
+    $("psh").value=d.peak_sun_hours;
+    const place=(d.location&&d.location.place||"").split(",").slice(0,2).join(",");
+    $("status").textContent=`${d.peak_sun_hours} h/day for ${place||pc} (${d.assumptions.peak_sun_hours_source}).`;
+    render();
+  }catch(e){ $("status").textContent="Couldn't get sunlight data: "+e.message+". Using the slider value."; }
+  finally{ $("lookup").disabled=false; }
+};
+if(API_URL) $("mode").textContent="Live data from AWS";
+render();
+</script>
+
+</body>
+</html>
