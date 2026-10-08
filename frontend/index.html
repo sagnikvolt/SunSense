@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-o7kx7GldW3A+0L+RCLa3V8g8FOuOVtB5U9da6qlD6Jg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-PXPb+bV/NckYjqhnqmuPOCkR4EatPLVfk866mvUWO1g='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -971,7 +971,7 @@ function faceName(az){ let best=FACES[0]; for(const f of FACES) if(Math.abs(f[0]
 function renderPV(){
   const note=$("pv-note"), det=$("pv-detail");
   if(!API_URL){ $("mchart").toggleAttribute("hidden",true); det.hidden=true;
-    note.textContent="Month-by-month simulation, the best panel angle and battery modelling come from PVGIS through the SunSense server, which isn't connected on this page yet."; return; }
+    note.textContent="Month-by-month simulation, the best panel angle and battery modelling are switching on soon."; return; }
   if(pvBusy && !pvLive()){ note.textContent="Running the PVGIS simulation for your roof…"; return; }
   if(!pvLive()){ $("mchart").toggleAttribute("hidden",true); det.hidden=true;
     note.textContent = pv&&pv.model!=="pvgis" ? "PVGIS isn't responding right now, so these numbers use the quick estimate." : "Calculate to run the PVGIS simulation for your roof."; return; }
@@ -1108,7 +1108,7 @@ $("lab-tabs").addEventListener("keydown",e=>{ const tabs=[...document.querySelec
   if(n){ e.preventDefault(); const t=tabs[(i+n+tabs.length)%tabs.length]; setTab(t.dataset.tool); t.focus(); } });
 
 async function runLab(){
-  if(!LAB_URL){ $("l-status").textContent="The Solar lab needs the SunSense server (PVGIS blocks direct browser calls). It works when you run backend/dev_server.py, and on the live site once the AWS API is deployed."; return; }
+  if(!LAB_URL){ $("l-status").textContent="The Solar lab is switching on soon on this site. Your plan already uses PVGIS solar data for your roof."; return; }
   if(!here){ $("l-status").textContent="Pick a location first."; return; }
   let body; try{ body=readForm(); }catch(e){ $("l-status").textContent=e.message; return; }
   labBusy=true; $("l-run").disabled=true; $("l-status").textContent= labTool==="tmy"||labTool==="hourly" ? "Fetching 8,760 hours from PVGIS…" : "Asking PVGIS…";
