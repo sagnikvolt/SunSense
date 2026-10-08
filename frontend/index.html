@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-IYFxdyrHXKl3z4jZkhvhDFWueCtnn6T8AjXVQffkf1o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-KiVWwLiYGH944zplFI/dCxbVsZuRhSVo+lQMfXJNavE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -138,10 +138,17 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .bar input::placeholder{color:var(--faint)}
 .bar input:focus-visible{outline:none}
 .card[data-state=search]:focus-within{border-color:rgba(255,190,46,.7)}
-.bar .go{background:var(--sun);color:var(--on-sun);border:0;border-radius:16px;font:700 15px var(--f-body);padding:12px 16px;cursor:pointer;white-space:nowrap}
+.bar .go,.coords .go{background:var(--sun);color:var(--on-sun);border:0;border-radius:16px;font:700 15px var(--f-body);padding:12px 16px;cursor:pointer;white-space:nowrap}
 .bar .gps{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--edge-soft);
   border-radius:16px;font:600 14px var(--f-body);padding:11px 12px;cursor:pointer;white-space:nowrap}
 .bar .gps svg{width:16px;height:16px;flex:none}
+.coord-toggle{justify-self:start;background:none;border:0;color:var(--faint);font:500 13px var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:2px 10px 4px}
+.coord-toggle:hover{color:var(--ink)}
+.coords{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:end;padding:0 2px 2px}
+.coords[hidden]{display:none}
+.coords label{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);padding-left:4px}
+.coords input{background:rgba(255,255,255,.07);border:1px solid var(--edge-soft);border-radius:12px;color:var(--ink);font:500 15px var(--f-mono);padding:10px;min-width:0;width:100%}
+.coords input:focus-visible{outline:2px solid rgba(255,190,46,.7);outline-offset:1px}
 #status{margin:0 10px 6px;font-size:14px;color:var(--warn)}
 #status:empty{display:none}
 
@@ -317,6 +324,8 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   #credits{max-width:none;right:64px;left:12px;text-align:left}
   .bar{grid-template-columns:minmax(0,1fr) auto}
   .bar .gps{grid-column:1/-1;grid-row:2;justify-content:center}
+  .coords{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .coords .go{grid-column:1/-1}
   .lead{grid-template-columns:minmax(0,1fr)}
   .copy{display:none}
   .help,body.fly .help{left:12px;right:62px;transform:none;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 40px);border-radius:16px;font-size:12px;max-width:none;align-items:flex-start;padding:8px 8px 8px 12px}
@@ -367,8 +376,14 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   <!-- 1. search -->
   <div class="view v-search on" id="v-search">
     <form class="bar" id="find" role="search">
-      <input id="where" type="text" value="" maxlength="120" spellcheck="false" placeholder="Enter your address or pincode" aria-label="Your address or pincode" autocomplete="street-address">
+      <input id="where" type="text" value="" maxlength="120" spellcheck="false" placeholder="Address, pincode or lat, lon" aria-label="Your address, pincode, or latitude and longitude" autocomplete="street-address">
       <button type="button" class="gps" id="gps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>Detect my location</button>
+      <button type="submit" class="go">Fly there</button>
+    </form>
+    <button type="button" class="coord-toggle" id="coord-toggle" aria-expanded="false" aria-controls="coords">Have coordinates? Enter latitude / longitude</button>
+    <form class="coords" id="coords" hidden>
+      <label>Latitude °N<input id="c-lat" type="number" inputmode="decimal" step="any" min="6" max="37.5" placeholder="22.6010" required></label>
+      <label>Longitude °E<input id="c-lon" type="number" inputmode="decimal" step="any" min="68" max="97.5" placeholder="88.4040" required></label>
       <button type="submit" class="go">Fly there</button>
     </form>
     <p id="status"></p>
@@ -984,7 +999,8 @@ function renderPV(){
   drawMonthly(p.monthly_kwh,i.units);
   const low=p.monthly_kwh.indexOf(Math.min(...p.monthly_kwh)), high=p.monthly_kwh.indexOf(Math.max(...p.monthly_kwh));
   const mname=k=>new Date(2026,k,1).toLocaleString("en-IN",{month:"long"});
-  note.textContent=`${fmt(p.yearly_kwh)} kWh a year from 18 years of satellite data. Best month ${mname(high)} (${fmt(p.monthly_kwh[high])} kWh), monsoon low ${mname(low)} (${fmt(p.monthly_kwh[low])} kWh).`;
+  const perKw=pv.system_kw?Math.round(p.yearly_kwh/pv.system_kw):null;
+  note.textContent=`${fmt(p.yearly_kwh)} kWh a year${perKw?` (${fmt(perKw)} kWh per kWp)`:""} from 19 years of satellite data (2005–2023). Best month ${mname(high)} (${fmt(p.monthly_kwh[high])} kWh), monsoon low ${mname(low)} (${fmt(p.monthly_kwh[low])} kWh).`;
   $("pv-tilt").value=p.tilt??$("pv-tilt").value; $("pv-tilt-o").textContent=`${p.tilt}°`;
   $("pv-face").value=String(FACES.reduce((b,f)=>Math.abs(f[0]-p.azimuth)<Math.abs(b[0]-p.azimuth)?f:b)[0]);
   $("pv-angle").textContent = p.optimal ? `Best angle for this spot: ${p.tilt}° tilt, facing ${faceName(p.azimuth)}.` : `Your panels: ${p.tilt}° tilt, facing ${faceName(p.azimuth)}.`;
@@ -1357,8 +1373,25 @@ function goTo(g,ticket){
   pv=null; pvTilt=pvAz=null;
 }
 function backToSearch(msg){ $("status").textContent=msg||""; go("search"); }
+function parseCoords(q){
+  const m=q.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*°?\s*([NS])?\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*([EW])?\s*$/i);
+  if(!m) return null;
+  let la=+m[1], lo=+m[3];
+  if(m[2]&&/s/i.test(m[2])) la=-Math.abs(la);
+  if(m[4]&&/w/i.test(m[4])) lo=-Math.abs(lo);
+  return [la,lo];
+}
+async function flyToCoords(la,lo){
+  if(!inIndia(la,lo)){ $("status").textContent="Those coordinates are outside India. SunSense covers India only (latitude 6 to 37.5, longitude 68 to 97.5)."; refit(); return; }
+  $("status").textContent="";
+  const ticket=++searchSeq;
+  await pinsReady;
+  const pc=nearestPincode(la,lo), ll=`${la.toFixed(4)}, ${lo.toFixed(4)}`;
+  goTo({lat:la,lng:lo,label:pc?`${ll} · near ${pc}`:ll,pincode:pc,tag:"Pin"},ticket);
+}
 async function locate(q){
   q=q.trim();
+  const c=q&&parseCoords(q); if(c) return flyToCoords(c[0],c[1]);
   if(!q){ $("status").textContent="Type your address or pincode, or use Detect my location."; refit(); return; }
   $("status").textContent="";
   const ticket=++searchSeq;
@@ -1464,6 +1497,17 @@ addEventListener("keydown",e=>{
 });
 
 $("find").addEventListener("submit",e=>{ e.preventDefault(); locate($("where").value); });
+$("coord-toggle").onclick=()=>{
+  const f=$("coords"), open=f.hidden; f.hidden=!open; $("coord-toggle").setAttribute("aria-expanded",String(open));
+  $("coord-toggle").textContent=open?"Hide latitude / longitude":"Have coordinates? Enter latitude / longitude";
+  refit(); if(open) $("c-lat").focus({preventScroll:true}); card.scrollTop=0; $("v-search").scrollTop=0;
+};
+$("coords").addEventListener("submit",e=>{
+  e.preventDefault();
+  const la=parseFloat($("c-lat").value), lo=parseFloat($("c-lon").value);
+  if(!Number.isFinite(la)||!Number.isFinite(lo)){ $("status").textContent="Enter both latitude and longitude as numbers, e.g. 22.6010 and 88.4040."; refit(); return; }
+  flyToCoords(la,lo);
+});
 $("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(cardState==="search" && /^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
 
 render();
