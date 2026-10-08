@@ -132,6 +132,13 @@ details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
 .pin{transform:translate(-50%,-100%);pointer-events:none;display:grid;justify-items:center;gap:2px}
 .pin b{font:600 12px var(--f-body);color:#1a1200;background:var(--sun);padding:2px 8px;border-radius:99px;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.4)}
 .pin i{width:2px;height:14px;background:var(--sun)}
+#street{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .9s ease;z-index:1;background:var(--sp-bg)}
+#street.on{opacity:1;pointer-events:auto}
+#street .cesium-viewer-bottom{right:8px;left:auto}
+.back{position:absolute;left:16px;top:16px;z-index:3;font:600 13px var(--f-body);color:var(--sp-ink);background:var(--sp-glass);
+  border:1px solid var(--sp-edge);border-radius:10px;padding:9px 12px;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.stage.street .zoomctl,.stage.street .credit{display:none}
+@media (prefers-reduced-motion:reduce){#street{transition:none}}
 .stage .loading{position:absolute;inset:0;display:grid;place-items:center;font:500 13px var(--f-mono);color:var(--sp-muted)}
 
 footer{font-size:13px;color:var(--muted)}
@@ -148,8 +155,10 @@ footer a{color:inherit}
     <span class="mode" id="mode">Calculated in your browser</span>
   </header>
 
-  <section class="stage" aria-label="Globe showing your location">
+  <section class="stage" id="stage" aria-label="Globe showing your location">
     <div id="globe"></div>
+    <div id="street" aria-label="3D street view"></div>
+    <button type="button" class="back" id="back" hidden>← Back to globe</button>
     <div class="loading" id="g-loading">Loading globe…</div>
     <div class="zoomctl">
       <button type="button" id="z-in" aria-label="Zoom in">+</button>
@@ -167,7 +176,7 @@ footer a{color:inherit}
         <span class="msg" id="status"></span>
       </div>
     </div>
-    <span class="credit">Imagery: NASA Blue Marble</span>
+    <span class="credit" id="credit">Imagery: NASA Blue Marble</span>
   </section>
 
   <div class="grid">
@@ -258,6 +267,10 @@ footer a{color:inherit}
 <script>
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
 const API_URL = "";
+// Cesium ion token (free Community plan). Adds Google Photorealistic 3D tiles for the final zoom.
+// Leave empty to use only the globe. Restrict the token to your site's URL in ion.cesium.com.
+const CESIUM_TOKEN = "";
+const CESIUM_VER = "1.145.0";
 
 const C = {PR:0.8, M2_PER_KW:10, EF:0.82, COST_PER_KW:55000, STEP:0.05, MIN_KW:1, PANEL_KW:0.54,
   SLABS:[[75,3.15],[125,4.25],[200,5.85],[400,7.15],[Infinity,8.25]]};
@@ -406,6 +419,54 @@ $("z-in").onclick=()=>{ if(!globe) return; const p=globe.pointOfView(); globe.po
 $("z-out").onclick=()=>{ if(!globe) return; const p=globe.pointOfView(); globe.pointOfView({...p,altitude:Math.min(p.altitude*1.8,6)},500); };
 $("z-home").onclick=()=>{ if(globe) globe.pointOfView(INDIA,1400); };
 
+// ---------- 3D street view (Cesium + Google Photorealistic 3D Tiles) ----------
+let cesiumReady=null, viewer=null, streetOn=false, searchSeq=0;
+if(CESIUM_TOKEN) document.getElementById("credit").textContent="Imagery: NASA Blue Marble · 3D: Google via Cesium";
+function loadCesium(){
+  if(cesiumReady) return cesiumReady;
+  const base=`https://cdn.jsdelivr.net/npm/cesium@${CESIUM_VER}/Build/Cesium/`;
+  window.CESIUM_BASE_URL=base;
+  cesiumReady=new Promise((ok,fail)=>{
+    const css=document.createElement("link"); css.rel="stylesheet"; css.href=base+"Widgets/widgets.css"; document.head.appendChild(css);
+    const sc=document.createElement("script"); sc.src=base+"Cesium.js"; sc.onload=ok; sc.onerror=()=>fail(new Error("Cesium didn't load"));
+    document.head.appendChild(sc);
+  }).then(async()=>{
+    Cesium.Ion.defaultAccessToken=CESIUM_TOKEN;
+    viewer=new Cesium.Viewer("street",{globe:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,
+      navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,
+      requestRenderMode:true});
+    viewer.scene.skyAtmosphere.show=true;
+    viewer.scene.primitives.add(await Cesium.createGooglePhotorealistic3DTileset());
+    return viewer;
+  });
+  cesiumReady.catch(()=>{ cesiumReady=null; });
+  return cesiumReady;
+}
+
+async function streetView(lat,lng,tag){
+  if(!CESIUM_TOKEN) return false;
+  try{
+    const v=await loadCesium();
+    v.entities.removeAll();
+    v.entities.add({position:Cesium.Cartesian3.fromDegrees(lng,lat,40),
+      point:{pixelSize:12,color:Cesium.Color.fromCssColorString("#ffbe2e"),outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY},
+      label:{text:tag,font:"600 13px 'Source Sans 3', sans-serif",fillColor:Cesium.Color.fromCssColorString("#1a1200"),showBackground:true,
+        backgroundColor:Cesium.Color.fromCssColorString("#ffbe2e"),pixelOffset:new Cesium.Cartesian2(0,-22),disableDepthTestDistance:Number.POSITIVE_INFINITY}});
+    // start high above, matching where the globe left off, then descend at an angle
+    v.camera.setView({destination:Cesium.Cartesian3.fromDegrees(lng,lat,250000)});
+    $("street").classList.add("on"); $("stage").classList.add("street"); $("back").hidden=false; streetOn=true;
+    v.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-0.0075,700),
+      orientation:{heading:0,pitch:Cesium.Math.toRadians(-38),roll:0},duration:reduce?0:3.5});
+    v.scene.requestRender();
+    return true;
+  }catch(e){ console.warn("3D street view unavailable:",e); $("status").textContent="3D street view isn't available right now. Showing the globe."; return false; }
+}
+function leaveStreet(){
+  $("street").classList.remove("on"); $("stage").classList.remove("street"); $("back").hidden=true; streetOn=false;
+  if(globe && here) globe.pointOfView({lat:here.lat,lng:here.lng,altitude:0.6},1200);
+}
+$("back").onclick=leaveStreet;
+
 async function locate(q){
   $("status").textContent="Finding…";
   try{
@@ -413,7 +474,10 @@ async function locate(q){
     here=g;
     $("r-place").textContent=g.label;
     $("r-coords").textContent=`${Math.abs(g.lat).toFixed(3)}°${g.lat>=0?"N":"S"}  ${Math.abs(g.lng).toFixed(3)}°${g.lng>=0?"E":"W"}`;
+    if(streetOn) leaveStreet();
     flyTo(g.lat,g.lng,g.pincode||"Your home");
+    const ticket=++searchSeq;
+    if(CESIUM_TOKEN){ loadCesium().catch(()=>{}); setTimeout(()=>{ if(ticket===searchSeq) streetView(g.lat,g.lng,g.pincode||"Your home"); },reduce?0:3000); }
     $("status").textContent = API_URL ? "Getting sunlight data…" : "Sunlight uses the slider below until the AWS API is live.";
     if(API_URL) await fetchSunlight(g);
   }catch(e){ $("status").textContent=e.message; }
