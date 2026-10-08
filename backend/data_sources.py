@@ -51,6 +51,8 @@ def cache_get(key: str) -> dict | None:
 
 
 def cache_put(key: str, value: dict) -> None:
+    if len(_local_cache) > 5000:          # keep a warm Lambda's memory bounded
+        _local_cache.clear()
     _local_cache[key] = value
     if not CACHE_BUCKET:
         return
@@ -66,10 +68,20 @@ def cache_put(key: str, value: dict) -> None:
 # HTTP
 # ---------------------------------------------------------------------------
 
+MAX_RESPONSE_BYTES = 2_000_000
+ALLOWED_HOSTS = {"power.larc.nasa.gov", "re.jrc.ec.europa.eu", "nominatim.openstreetmap.org"}
+
+
 def _get_json(url: str) -> dict | list:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme != "https" or parts.hostname not in ALLOWED_HOSTS:   # only ever call the three known APIs
+        raise ValueError("blocked upstream URL")
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-        return json.loads(r.read())
+        data = r.read(MAX_RESPONSE_BYTES + 1)
+        if len(data) > MAX_RESPONSE_BYTES:
+            raise ValueError("upstream response too large")
+        return json.loads(data)
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +166,10 @@ def peak_sun_hours(lat: float, lon: float) -> dict:
 
     for source, fn in (("NASA POWER", _nasa_power_psh), ("PVGIS", _pvgis_psh)):
         try:
-            result = {"peak_sun_hours": round(fn(lat, lon), 2), "source": source}
+            psh = fn(lat, lon)
+            if not (1.0 <= psh <= 9.0):     # ignore nonsense from an upstream API
+                raise ValueError("implausible irradiance")
+            result = {"peak_sun_hours": round(psh, 2), "source": source}
             cache_put(key, result)
             return result
         except Exception:

@@ -24,7 +24,7 @@ def test_happy_path(monkeypatch):
     out = json.loads(r["body"])
     assert out["system_kw"] == 2.3
     assert out["location"]["pincode"] == "700089"
-    assert r["headers"]["Access-Control-Allow-Origin"] == "*"
+    assert r["headers"]["Access-Control-Allow-Origin"] == "https://sagnikvolt.github.io"
 
 
 def test_bill_instead_of_units(monkeypatch):

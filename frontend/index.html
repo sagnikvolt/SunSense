@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-t76G5HxVwVmtvIifFrlsTu3EtJDS49oWuLoReLhwCVg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
+<meta name="theme-color" content="#02040b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='22' fill='%23ffbe2e'/%3E%3C/svg%3E">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -108,8 +113,20 @@ body:not(.st-search) #logo{opacity:0;transform:translateY(-16px);pointer-events:
 .btn{font:700 14px var(--f-body);border-radius:12px;padding:10px 14px;cursor:pointer;border:1px solid var(--edge);white-space:nowrap}
 .btn.primary{background:var(--sun);color:var(--on-sun);border-color:transparent}
 .btn.ghost{background:rgba(255,255,255,.08);color:var(--ink)}
-.btn.on{border-color:var(--sun);color:var(--sun-ink)}
 .acts{display:flex;flex-wrap:wrap;gap:8px}
+.v-found .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.v-found .acts .primary{grid-column:1/-1;padding:12px 14px;font-size:15px}
+body.pinning .v-found #adjust{grid-column:1/-1}
+.pin-only{display:none!important}
+body.pinning .pin-only{display:inline-flex!important;align-items:center;justify-content:center}
+body.pinning .no-pin{display:none!important}
+/* crosshair for setting the pin precisely (centre of the visible map) */
+.cross{position:fixed;z-index:2;width:46px;height:46px;margin:-23px 0 0 -23px;pointer-events:none;display:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+body.pinning .cross{display:block}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--sun)}
+.cross::before{left:22px;top:0;width:2px;height:46px}
+.cross::after{top:22px;left:0;height:2px;width:46px}
+.cross i{position:absolute;left:14px;top:14px;width:18px;height:18px;border:2px solid var(--sun);border-radius:50%}
 input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
 
 /* search view */
@@ -263,6 +280,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
 
 <div class="sky" aria-hidden="true"><div class="stars s1"></div><div class="stars s2"></div></div>
 <div class="sky" style="background:none"><div id="globe" aria-label="3D Earth"></div></div>
+<div class="cross" id="cross" aria-hidden="true"><i></i></div>
 <div class="loading" id="g-loading">Loading 3D Earth…</div>
 <div id="credits"></div>
 
@@ -288,7 +306,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   <!-- 1. search -->
   <div class="view v-search on" id="v-search">
     <form class="bar" id="find" role="search">
-      <input id="where" type="text" value="" placeholder="Enter your address or pincode" aria-label="Your address or pincode" autocomplete="street-address">
+      <input id="where" type="text" value="" maxlength="120" spellcheck="false" placeholder="Enter your address or pincode" aria-label="Your address or pincode" autocomplete="street-address">
       <button type="button" class="gps" id="gps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>Detect my location</button>
       <button type="submit" class="go">Fly there</button>
     </form>
@@ -310,9 +328,10 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
     <span class="coords" id="f-coords"></span>
     <span class="hint" id="f-hint"></span>
     <div class="acts">
-      <button type="button" class="btn primary" id="calc-btn">Calculate my solar plan</button>
+      <button type="button" class="btn primary no-pin" id="calc-btn">Calculate my solar plan</button>
+      <button type="button" class="btn primary pin-only" id="set-pin">Set pin here</button>
       <button type="button" class="btn ghost" id="adjust">Adjust pin</button>
-      <button type="button" class="btn ghost" id="again">Search again</button>
+      <button type="button" class="btn ghost no-pin" id="again">Search again</button>
     </div>
   </div>
 
@@ -334,8 +353,10 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
         <span class="place" id="r-place">—</span>
         <span class="coords" id="r-coords"></span>
         <div class="acts">
-          <button type="button" class="btn ghost" id="move-pin">Move pin</button>
-          <button type="button" class="btn ghost" id="change">Change</button>
+          <button type="button" class="btn ghost no-pin" id="move-pin">Move pin</button>
+          <button type="button" class="btn ghost no-pin" id="change">Change</button>
+          <button type="button" class="btn primary pin-only" id="set-pin2">Set pin here</button>
+          <button type="button" class="btn ghost pin-only" id="cancel-pin">Cancel</button>
         </div>
       </div>
       <div class="cols">
@@ -348,12 +369,12 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
                 <button type="button" id="by-units" aria-pressed="true">Units / month</button>
                 <button type="button" id="by-bill" aria-pressed="false">Bill / month</button>
               </div>
-              <div class="unit"><input id="use" type="number" min="0" step="1" value="250" aria-label="Monthly electricity use"><span id="use-u">kWh</span></div>
+              <div class="unit"><input id="use" type="number" min="0" max="100000" step="1" value="250" aria-label="Monthly electricity use"><span id="use-u">kWh</span></div>
               <span class="hint" id="use-h">From the "units consumed" line on your WBSEDCL bill.</span>
             </div>
             <div class="field">
               <label for="roof">Free roof area</label>
-              <div class="unit"><input id="roof" type="number" min="0" step="1" value="30"><span>m²</span></div>
+              <div class="unit"><input id="roof" type="number" min="0" max="10000" step="1" value="30"><span>m²</span></div>
               <span class="hint">Shade-free space only. About 10 m² per kW.</span>
             </div>
             <div class="field">
@@ -428,8 +449,8 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
 </section>
 
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/";</script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
-<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" integrity="sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js" integrity="sha384-D1oR8FyBDsJWkPeydGJTh8nJg5/++9sqchzJuu+oGQPmgbwu3aJmoVj3BTowr6t6" crossorigin="anonymous"></script>
 <script>
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
 const API_URL = "";
@@ -451,15 +472,16 @@ function calculate(units,roof,psh,type){
           payback: save>0? net/save : null, co2: gen*C.EF};
 }
 
+const num=(id,max)=>{ const v=parseFloat($(id).value); return Number.isFinite(v) ? Math.min(Math.max(v,0),max) : 0; };
 const $=id=>document.getElementById(id);
 const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
 const fmt=n=>Math.round(n).toLocaleString("en-IN");
 let byBill=false, type="on-grid";
 
 function press(a,b){ a.setAttribute("aria-pressed","true"); b.setAttribute("aria-pressed","false"); }
-$("by-units").onclick=()=>{ if(!byBill) return; const u=+$("use").value||0; byBill=false; press($("by-units"),$("by-bill"));
+$("by-units").onclick=()=>{ if(!byBill) return; const u=num("use",1e6); byBill=false; press($("by-units"),$("by-bill"));
   $("use").value=Math.round(unitsFromBill(u)); $("use-u").textContent="kWh"; $("use-h").textContent='From the "units consumed" line on your WBSEDCL bill.'; render(); };
-$("by-bill").onclick=()=>{ if(byBill) return; const u=+$("use").value||0; byBill=true; press($("by-bill"),$("by-units"));
+$("by-bill").onclick=()=>{ if(byBill) return; const u=num("use",1e6); byBill=true; press($("by-bill"),$("by-units"));
   $("use").value=Math.round(energyCharge(u)); $("use-u").textContent="₹"; $("use-h").textContent="Energy charge on your monthly bill, before fixed charge and duty."; render(); };
 $("on").onclick=()=>{ type="on-grid"; press($("on"),$("off")); render(); };
 $("off").onclick=()=>{ type="off-grid"; press($("off"),$("on")); render(); };
@@ -468,7 +490,7 @@ $("f").addEventListener("submit",e=>e.preventDefault());
 
 function render(){
   const psh=+$("psh").value; $("psh-o").textContent=psh.toFixed(2).replace(/0$/,"")+" h/day";
-  const raw=Math.max(+$("use").value||0,0), units=byBill?unitsFromBill(raw):raw, roof=Math.max(+$("roof").value||0,0);
+  const raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
   const r=calculate(units,roof,psh,type);
 
   $("pb").innerHTML = r.payback==null ? "—<small>years</small>" : r.payback.toFixed(1)+"<small>years</small>";
@@ -524,10 +546,22 @@ const pinsReady=fetch("assets/pincodes.csv").then(r=>r.text()).then(t=>{
   PINS=new Map(); for(const line of t.split("\n").slice(1)){ const [p,la,lo]=line.split(","); if(p) PINS.set(p,[+la,+lo]); }
 }).catch(()=>{ PINS=new Map(); });
 
+const geoCache=new Map(), geoTimes=[];
+const inIndia=(la,lo)=>Number.isFinite(la)&&Number.isFinite(lo)&&la>6&&la<37.5&&lo>68&&lo<97.5;
 async function geocode(q){
-  q=q.trim();
+  q=q.replace(/[\u0000-\u001f<>]/g," ").replace(/\s+/g," ").trim().slice(0,120);
   const isPin=/^\d{6}$/.test(q);
   if(!isPin && q.length<3) throw new Error("Type a 6-digit pincode or an address.");
+  const key=q.toLowerCase();
+  if(geoCache.has(key)) return geoCache.get(key);
+  const now=Date.now(); while(geoTimes.length && now-geoTimes[0]>300000) geoTimes.shift();
+  if(geoTimes.length>=20) throw new Error("That's a lot of searches. Wait a minute and try again.");
+  geoTimes.push(now);
+  const g=await geocodeRaw(q,isPin);
+  if(!inIndia(g.lat,g.lng)) throw new Error("SunSense covers India only. Try an Indian address or pincode.");
+  geoCache.set(key,g); return g;
+}
+async function geocodeRaw(q,isPin){
   // With Google 3D tiles on screen, Google's terms require Google's geocoder (via Cesium ion).
   let v=null; try{ v=await cesiumReady; }catch{}
   if(v){
@@ -540,8 +574,8 @@ async function geocode(q){
         return {lat:Cesium.Math.toDegrees(c.latitude),lng:Cesium.Math.toDegrees(c.longitude),
                 label:hits[0].displayName.split(",").slice(0,3).join(","),pincode:isPin?q:null};
       }
-      if(!isPin) throw new Error(`Couldn't find "${q}". Try adding the town or district.`);
-    }catch(e){ if(!isPin) throw e; }
+      if(!isPin) throw new Error(`Couldn't find "${q.slice(0,40)}". Try adding the town or district.`);
+    }catch(e){ if(!isPin) throw (e && /^Couldn't find/.test(e.message)) ? e : new Error("Address search isn't responding right now. Try a pincode."); }
   }
   // Backup: bundled pincode table (works offline and when the 3D globe can't load)
   if(isPin){
@@ -582,7 +616,6 @@ const cesiumReady=(async()=>{
   el.addEventListener("wheel",e=>{ if(e.ctrlKey) e.preventDefault(); },{passive:false});   // trackpad pinch zooms the map, not the page
   const H=v.screenSpaceEventHandler, E=Cesium.ScreenSpaceEventType;
   H.removeInputAction(E.LEFT_DOUBLE_CLICK);
-  H.setInputAction(e=>onMapClick(e.position),E.LEFT_CLICK);
   H.setInputAction(e=>zoomToPoint(e.position),E.LEFT_DOUBLE_CLICK);
 
   v.clock.onTick.addEventListener(()=>{
@@ -651,23 +684,40 @@ $("z-out").onclick=()=>zoomBy(2);
 
 
 // ---------- picking, manual pin, double-click zoom, keyboard ----------
+// pos = canvas pixel coords. Tries the 3D-tile depth buffer, then a ray against the tiles, then the ellipsoid.
 function pickAt(pos){
   if(!viewer) return null;
-  let p=viewer.scene.pickPositionSupported ? viewer.scene.pickPosition(pos) : undefined;
+  const sc=viewer.scene; let p;
+  try{ sc.render(); }catch{}
+  try{ if(sc.pickPositionSupported) p=sc.pickPosition(pos); }catch{}
+  if(!Cesium.defined(p)){ try{ const r=sc.pickFromRay(viewer.camera.getPickRay(pos)); p=r&&r.position; }catch{} }
   if(!Cesium.defined(p)) p=viewer.camera.pickEllipsoid(pos);
   return Cesium.defined(p) ? p : null;
 }
+function screenToCanvas(x,y){ const r=viewer.scene.canvas.getBoundingClientRect(); return new Cesium.Cartesian2(x-r.left,y-r.top); }
+// centre of the part of the map that isn't covered by the card
+function mapCentre(){
+  const W=innerWidth, H=innerHeight, c=card.getBoundingClientRect();
+  if(narrow()) return {x:W/2, y:Math.max(60,c.top/2)};
+  const left = cardState==="found" ? 0 : c.right;
+  return {x:(left+W)/2, y:H/2};
+}
+function placeCross(){ const m=mapCentre(); $("cross").style.left=m.x+"px"; $("cross").style.top=m.y+"px"; }
 function fmtCoords(lat,lng){ return `${Math.abs(lat).toFixed(5)}°${lat>=0?"N":"S"}  ${Math.abs(lng).toFixed(5)}°${lng>=0?"E":"W"}`; }
 function setPinning(on){
   pinning=on && !!pinEntity;
   document.body.classList.toggle("pinning",pinning);
-  if(pinning && orbit) orbit.auto=false;
+  if(pinning){ stopOrbit(); placeCross(); }   // free camera so the map can be dragged under the crosshair
   updatePinUI();
 }
-function onMapClick(pos){
-  if(!pinning) return;
-  const p=pickAt(pos); if(!p) return;
-  stopOrbit();
+function setPinAtScreen(x,y){
+  if(!pinning||!viewer) return;
+  const p=pickAt(screenToCanvas(x,y));
+  if(!p){ flashHint("Couldn't find the ground there. Zoom in a little and try again."); return; }
+  if(Cesium.Cartesian3.distance(p,viewer.camera.positionWC)>60000){ flashHint("Zoom in closer to your roof first."); return; }
+  movePin(p);
+}
+function movePin(p){
   const c=Cesium.Cartographic.fromCartesian(p), lat=Cesium.Math.toDegrees(c.latitude), lng=Cesium.Math.toDegrees(c.longitude);
   pinEntity.position=p; pinEntity.label.text="Your roof";
   here={...here,lat,lng,pinned:true,accuracy:0};
@@ -676,6 +726,14 @@ function onMapClick(pos){
   showCoords();
   if(API_URL) fetchSunlight(here);
 }
+let downs=new Map();
+el.addEventListener("pointerdown",e=>{ downs.set(e.pointerId,{x:e.clientX,y:e.clientY,t:performance.now(),multi:downs.size>0}); if(downs.size>1) for(const d of downs.values()) d.multi=true; },{capture:true,passive:true});
+el.addEventListener("pointerup",e=>{
+  const d=downs.get(e.pointerId); downs.delete(e.pointerId);
+  if(!d||d.multi||!pinning) return;
+  if(Math.hypot(e.clientX-d.x,e.clientY-d.y)<14 && performance.now()-d.t<700) setPinAtScreen(e.clientX,e.clientY);
+},{capture:true,passive:true});
+el.addEventListener("pointercancel",e=>downs.delete(e.pointerId),{capture:true,passive:true});
 function zoomToPoint(pos){
   if(pinning) return;
   const p=pickAt(pos); if(!p) return;
@@ -734,8 +792,8 @@ $("help-open").onclick=()=>showHelp(true);
 
 async function fetchSunlight(g){
   try{
-    const units=byBill?unitsFromBill(+$("use").value||0):(+$("use").value||0);
-    const body={monthly_units:units,roof_area:+$("roof").value||1,system_type:type};
+    const units=byBill?unitsFromBill(num("use",1e6)):num("use",1e5);
+    const body={monthly_units:units,roof_area:num("roof",1e4)||1,system_type:type};
     if(g.pincode) body.pincode=g.pincode; else { body.lat=g.lat; body.lon=g.lng; }
     const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const d=await res.json(); if(!res.ok) throw new Error(d.error||"lookup failed");
@@ -792,9 +850,10 @@ function go(st){
   if(!["found","results","expanded"].includes(st) && pinning) setPinning(false);
   updateGrowIcon();
   place(false);
+  if(pinning) setTimeout(placeCross,800);
 }
 const refit=()=>place(false);
-addEventListener("resize",()=>place(true));
+addEventListener("resize",()=>{ place(true); if(pinning) setTimeout(placeCross,800); });
 document.fonts && document.fonts.ready.then(()=>place(true));
 
 // ---------- progress view ----------
@@ -816,14 +875,12 @@ function showCoords(){
   if(pinMoved){ $("f-eyebrow").textContent="Pin set on your roof"; $("f-hint").textContent="Your plan uses this exact spot."; }
   refit();
 }
+function flashHint(t){ $("f-hint").textContent=t; $("r-coords").textContent=t; refit(); }
 function updatePinUI(){
   $("adjust").textContent = pinning ? "Cancel" : "Adjust pin";
-  $("adjust").classList.toggle("on",pinning);
-  $("move-pin").textContent = pinning ? "Cancel" : "Move pin";
-  $("move-pin").classList.toggle("on",pinning);
   if(pinning){
-    $("f-hint").textContent="Tap your exact roof on the map to move the pin.";
-    $("r-coords").textContent="Tap your roof on the map";
+    $("f-hint").textContent="Drag the map so the crosshair sits on your roof, then tap Set pin here. You can also tap your roof directly.";
+    $("r-coords").textContent="Crosshair on your roof → Set pin here";
   } else {
     $("r-coords").textContent=coordsText();
     if(cardState==="found" && !pinMoved) $("f-hint").textContent=foundHint();
@@ -843,7 +900,11 @@ function arrive(){
   go("found");
 }
 $("adjust").onclick=()=>setPinning(!pinning);
-$("move-pin").onclick=()=>setPinning(!pinning);
+$("move-pin").onclick=()=>setPinning(true);
+$("cancel-pin").onclick=()=>setPinning(false);
+const setHere=()=>{ const m=mapCentre(); setPinAtScreen(m.x,m.y); };
+$("set-pin").onclick=setHere;
+$("set-pin2").onclick=setHere;
 
 // ---------- search → fly ----------
 function goTo(g,ticket){
@@ -867,7 +928,7 @@ async function locate(q){
   try{
     const g=await geocode(q);
     if(ticket===searchSeq) goTo(g,ticket);
-  }catch(e){ if(ticket===searchSeq) backToSearch(e.message); }
+  }catch(e){ if(ticket===searchSeq) backToSearch(String(e&&e.message||"Something went wrong. Try again.").slice(0,160)); }
 }
 function toLanding(){
   searchSeq++; go("search"); goHome();
@@ -907,7 +968,7 @@ $("gps").onclick=()=>{
 
 // ---------- calculate → results ----------
 function currentResult(){
-  const psh=+$("psh").value, raw=Math.max(+$("use").value||0,0), units=byBill?unitsFromBill(raw):raw, roof=Math.max(+$("roof").value||0,0);
+  const psh=+$("psh").value, raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
   return {psh,units,roof,r:calculate(units,roof,psh,type)};
 }
 function reveal(){

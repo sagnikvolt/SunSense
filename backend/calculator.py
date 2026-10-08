@@ -22,6 +22,8 @@ COST_PER_KW = 55_000              # ₹/kWp gross, on-grid residential (≈₹48
 DEFAULT_PEAK_SUN_HOURS = 4.5      # fallback for southern WB if no irradiance data
 MIN_SYSTEM_KW = 1.0               # smallest system worth quoting
 SIZE_STEP_KW = 0.05               # round system size to this step
+MAX_UNITS = 100_000               # kWh/month — far above any home; rejects junk input
+MAX_ROOF_M2 = 10_000              # m²
 
 # WBSEDCL LT domestic energy charges, ₹/kWh, by monthly consumption slab.
 # (upper_limit_units, rate). Telescopic: each slab's rate applies only to
@@ -105,13 +107,19 @@ def calculate(
     system_type  "on-grid" or "off-grid"
     system_kw    optional override to evaluate a specific design (e.g. 2.75)
     """
-    if units < 0 or roof_area < 0:
-        raise ValueError("units and roof_area must be non-negative")
+    for name, val, hi in (("units", units, MAX_UNITS), ("roof_area", roof_area, MAX_ROOF_M2)):
+        if isinstance(val, bool) or not isinstance(val, (int, float)) or not math.isfinite(val):
+            raise ValueError(f"{name} must be a number")
+        if val < 0 or val > hi:
+            raise ValueError(f"{name} must be between 0 and {hi:g}")
     if system_type not in ("on-grid", "off-grid"):
         raise ValueError('system_type must be "on-grid" or "off-grid"')
+    if system_kw is not None and (not isinstance(system_kw, (int, float)) or not math.isfinite(system_kw) or not 0 <= system_kw <= MAX_ROOF_M2 / M2_PER_KW):
+        raise ValueError("system_kw out of range")
 
     location = location or {}
-    psh = float(location.get("peak_sun_hours") or DEFAULT_PEAK_SUN_HOURS)
+    psh = location.get("peak_sun_hours")
+    psh = float(psh) if isinstance(psh, (int, float)) and math.isfinite(psh) and 1.0 <= psh <= 9.0 else DEFAULT_PEAK_SUN_HOURS
 
     # --- Size ---------------------------------------------------------------
     roof_cap_kw = roof_area / M2_PER_KW

@@ -140,6 +140,23 @@ Known v1 limits: off-grid battery cost isn't modelled yet, and there's no shadin
 
 ---
 
+## Security
+
+**Frontend (GitHub Pages / Amplify)**
+- Content Security Policy: scripts only from this site and the pinned Cesium build; inline scripts allowed by SHA-256 hash only; no plugins, frames, form posts or `<base>` changes. Cesium needs `unsafe-eval` and WebAssembly, so those are allowed.
+- Subresource Integrity on Cesium JS/CSS, so a tampered CDN file is refused.
+- All user text is written with `textContent`, never as HTML. Inputs are capped (address 120 chars, units ≤ 100,000, roof ≤ 10,000 m²) and non-numbers are treated as 0.
+- Address search is cached and throttled (20 lookups per 5 minutes per tab), India-only results.
+- GPS coordinates never leave the browser except to our own API.
+- Cesium token is public by design and restricted to this site's URLs in Cesium ion.
+
+**Backend (Lambda + API Gateway + S3)**
+- 2 KB request limit; strict JSON object; finite numbers in range only (NaN, Infinity, booleans rejected); India-only coordinates; 6-digit pincodes.
+- CORS allow-list (`AllowedOrigins` parameter), `nosniff`, `no-store`; errors never include internals.
+- API throttling (10 req/s, burst 20); upstream calls only to NASA POWER / PVGIS / OSM over HTTPS with size limits.
+- S3 cache: private, encrypted, TLS-only, objects expire after a year; Lambda can only get/put cache objects. Logs kept 14 days.
+- `backend/tests/test_security.py` fuzzes the API with 3,000 junk payloads; it must never return a 500.
+
 ## Repo layout (planned)
 
 ```
