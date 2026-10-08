@@ -185,7 +185,7 @@ body.fly .hud{transform:none;opacity:1;pointer-events:auto}
   .panel{position:relative;left:auto;top:auto;bottom:auto;width:auto;margin:58vh 12px 16px;overflow:visible;padding:20px 16px 16px}
   .zoomctl{top:auto;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;transform:none}
   .zoomctl button{width:38px;height:38px}
-  #credits{max-width:calc(100vw - 24px);right:12px;left:12px;text-align:left}
+  #credits{max-width:none;right:64px;left:12px;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 12px);text-align:left}
   body.fly{overflow:hidden}
   body.fly .panel{transform:translateY(100vh)}
   body.fly #globe{transform:none}
@@ -451,7 +451,7 @@ const cesiumReady=(async()=>{
     contextOptions:{webgl:{alpha:true}}});
   v.scene.backgroundColor=Cesium.Color.TRANSPARENT;   // let the page's starfield show through: one seamless sky
   v.scene.skyAtmosphere.show=true;
-  v.scene.sun.show=false; v.scene.moon.show=false;
+  if(v.scene.sun) v.scene.sun.show=false; if(v.scene.moon) v.scene.moon.show=false;
   v.scene.screenSpaceCameraController.enableCollisionDetection=false;
   const tiles=await Cesium.createGooglePhotorealistic3DTileset({onlyUsingWithGoogleGeocoder:true},{showCreditsOnScreen:true});
   v.scene.primitives.add(tiles);
