@@ -63,7 +63,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--sun);outline-of
 input[type=range]{width:100%;accent-color:var(--sun)}
 .psh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .psh output{font:500 17px var(--f-mono)}
-.lookup{font:600 14px var(--f-body);border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer}
+.lookup{font:600 14px var(--f-body)}
 .lookup:disabled{opacity:.45;cursor:not-allowed}
 .status{font-size:13px;color:var(--muted);min-height:1.3em;margin:0}
 
@@ -99,6 +99,41 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 details{font-size:14px;color:var(--muted)}
 details summary{cursor:pointer;font-weight:600;color:var(--ink)}
 details ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}
+/* Globe stage: deliberately night-sky in both themes, so its colours are fixed */
+.stage{--sp-bg:#050a16;--sp-ink:#eaf0fb;--sp-muted:#9fb0cf;--sp-glass:rgba(10,18,36,.72);--sp-edge:rgba(160,185,230,.22);
+  position:relative;height:clamp(340px,56vh,540px);border-radius:var(--r);overflow:hidden;color:var(--sp-ink);
+  background:radial-gradient(ellipse at 70% 40%,#13254a 0%,#081127 45%,var(--sp-bg) 80%)}
+.stage::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.7;
+  background-image:radial-gradient(1px 1px at 12% 22%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 33% 78%,#cfe0ff 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 58% 12%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 81% 66%,#fff 50%,transparent 51%),
+  radial-gradient(1px 1px at 91% 18%,#dfe8ff 50%,transparent 51%),radial-gradient(1px 1px at 6% 61%,#fff 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 44% 48%,#cfe0ff 50%,transparent 51%),radial-gradient(1px 1px at 70% 90%,#fff 50%,transparent 51%)}
+#globe{position:absolute;inset:0}
+#globe canvas{display:block;outline:none}
+.finder{position:absolute;left:16px;right:16px;bottom:16px;display:grid;gap:8px;max-width:440px;z-index:2}
+.search{display:grid;grid-template-columns:minmax(0,1fr) auto;background:var(--sp-glass);border:1px solid var(--sp-edge);border-radius:12px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:hidden}
+.search input{background:transparent;border:0;color:var(--sp-ink);font:500 17px var(--f-mono);padding:13px 14px;min-width:0}
+.search input::placeholder{color:var(--sp-muted)}
+.search input:focus-visible{outline:none}
+.search:focus-within{border-color:var(--sun)}
+.search button{background:var(--sun);color:#1a1200;border:0;font:700 14px var(--f-body);padding:0 16px;cursor:pointer}
+.readout{background:var(--sp-glass);border:1px solid var(--sp-edge);border-radius:12px;padding:10px 14px;display:grid;gap:2px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.readout .place{font:600 15px var(--f-body)}
+.readout .coords{font:400 12px var(--f-mono);color:var(--sp-muted);letter-spacing:.02em}
+.readout .msg{font-size:13px;color:var(--sp-muted)}
+.stage .zoomctl{position:absolute;right:16px;top:16px;display:grid;gap:6px;z-index:2}
+.zoomctl button{width:38px;height:38px;border-radius:10px;border:1px solid var(--sp-edge);background:var(--sp-glass);color:var(--sp-ink);
+  font:500 18px var(--f-mono);cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.zoomctl button:hover,.search button:hover{filter:brightness(1.1)}
+.stage .credit{position:absolute;right:16px;bottom:10px;font:400 10px var(--f-mono);color:var(--sp-muted);opacity:.7;z-index:1}
+@media (max-width:560px){.stage .credit{display:none}}
+.pin{transform:translate(-50%,-100%);pointer-events:none;display:grid;justify-items:center;gap:2px}
+.pin b{font:600 12px var(--f-body);color:#1a1200;background:var(--sun);padding:2px 8px;border-radius:99px;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.pin i{width:2px;height:14px;background:var(--sun)}
+.stage .loading{position:absolute;inset:0;display:grid;place-items:center;font:500 13px var(--f-mono);color:var(--sp-muted)}
+
 footer{font-size:13px;color:var(--muted)}
 footer a{color:inherit}
 @media (prefers-reduced-motion:no-preference){.pv{transition:opacity .2s}}
@@ -113,16 +148,31 @@ footer a{color:inherit}
     <span class="mode" id="mode">Calculated in your browser</span>
   </header>
 
+  <section class="stage" aria-label="Globe showing your location">
+    <div id="globe"></div>
+    <div class="loading" id="g-loading">Loading globe…</div>
+    <div class="zoomctl">
+      <button type="button" id="z-in" aria-label="Zoom in">+</button>
+      <button type="button" id="z-out" aria-label="Zoom out">−</button>
+      <button type="button" id="z-home" aria-label="Show all of India">⌂</button>
+    </div>
+    <div class="finder">
+      <form class="search" id="find" role="search">
+        <input id="where" type="text" value="700089" placeholder="Pincode or address" aria-label="Pincode or address" autocomplete="postal-code">
+        <button type="submit">Find</button>
+      </form>
+      <div class="readout" aria-live="polite">
+        <span class="place" id="r-place">Locating…</span>
+        <span class="coords" id="r-coords"></span>
+        <span class="msg" id="status"></span>
+      </div>
+    </div>
+    <span class="credit">Imagery: NASA Blue Marble</span>
+  </section>
+
   <div class="grid">
     <form class="sheet" id="f" novalidate>
       <h2>Your home</h2>
-
-      <div class="field">
-        <label for="pincode">Pincode</label>
-        <input id="pincode" type="text" inputmode="numeric" maxlength="6" value="700089" autocomplete="postal-code">
-        <button type="button" class="lookup" id="lookup">Get sunlight for this pincode</button>
-        <p class="status" id="status"></p>
-      </div>
 
       <div class="field">
         <span class="lbl" id="use-l">Electricity use</span>
@@ -204,6 +254,7 @@ footer a{color:inherit}
   <footer>Built for WeMakeDevs × AWS Environmental Hacks 2026 · <a href="https://github.com/sagnikvolt/SunSense">Source on GitHub</a> · Estimates only. Confirm rates with WBSEDCL and pmsuryaghar.gov.in.</footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
 <script>
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
 const API_URL = "";
@@ -290,25 +341,103 @@ function drawChart(r){
 }
 function niceStep(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); for(const m of [1,2,2.5,5,10]) if(m*p>=v) return m*p; return 10*p; }
 
-$("lookup").onclick=async()=>{
-  const pc=$("pincode").value.trim();
-  if(!/^\d{6}$/.test(pc)){ $("status").textContent="Enter a 6-digit pincode."; return; }
-  if(!API_URL){ $("status").textContent="Live sunlight lookup turns on once the AWS API is deployed. Using the slider value for now."; return; }
-  $("status").textContent="Looking up sunlight data…"; $("lookup").disabled=true;
+// ---------- Location: pincode table + address search ----------
+let PINS=null;
+const pinsReady=fetch("assets/pincodes.csv").then(r=>r.text()).then(t=>{
+  PINS=new Map(); for(const line of t.split("\n").slice(1)){ const [p,la,lo]=line.split(","); if(p) PINS.set(p,[+la,+lo]); }
+}).catch(()=>{ PINS=new Map(); });
+
+async function geocode(q){
+  q=q.trim();
+  if(/^\d{6}$/.test(q)){
+    await pinsReady; const hit=PINS.get(q);
+    if(!hit) throw new Error(`Pincode ${q} isn't in our list. Try a nearby pincode or an address.`);
+    return {lat:hit[0],lng:hit[1],label:`Pincode ${q}`,pincode:q};
+  }
+  if(q.length<3) throw new Error("Type a 6-digit pincode or an address.");
+  const url="https://nominatim.openstreetmap.org/search?"+new URLSearchParams({q,countrycodes:"in",format:"json",limit:"1"});
+  let res; try{ res=await fetch(url,{headers:{"Accept-Language":"en"}}); }
+  catch{ throw new Error("Address search works on the live site. In this preview, use a pincode."); }
+  const d=await res.json(); if(!d.length) throw new Error(`Couldn't find "${q}". Try adding the town or district.`);
+  return {lat:+d[0].lat,lng:+d[0].lon,label:d[0].display_name.split(",").slice(0,3).join(","),pincode:null};
+}
+
+// ---------- Globe ----------
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const INDIA={lat:22.5,lng:82,altitude:1.9};
+let globe=null, here=null;
+const el=$("globe");
+
+function initGlobe(){
+  if(typeof Globe!=="function"){ $("g-loading").textContent="The globe couldn't load. The calculator below still works."; return; }
+  globe=Globe({animateIn:!reduce})(el)
+    .globeImageUrl("assets/earth.jpg").bumpImageUrl("assets/bump.jpg")
+    .backgroundColor("rgba(0,0,0,0)").showAtmosphere(true).atmosphereColor("#8fb8ff").atmosphereAltitude(0.17)
+    .width(el.clientWidth).height(el.clientHeight)
+    .ringColor(()=>t=>`rgba(255,190,46,${1-t})`).ringMaxRadius(2.2).ringPropagationSpeed(1.4).ringRepeatPeriod(1100)
+    .pointColor(()=>"#ffbe2e").pointAltitude(0.012).pointRadius(0.09)
+    .htmlElement(d=>{ const n=document.createElement("div"); n.className="pin"; n.innerHTML=`<b></b><i></i>`; n.querySelector("b").textContent=d.tag; return n; })
+    .htmlAltitude(0.012);
+  const c=globe.controls(); c.autoRotate=!reduce; c.autoRotateSpeed=0.35; c.enableDamping=true; c.minDistance=101.5; c.maxDistance=900;
+  el.addEventListener("pointerdown",()=>{ c.autoRotate=false; },{passive:true});
+  globe.pointOfView({...INDIA,altitude:reduce?INDIA.altitude:3.2},0);
+  if(!reduce) setTimeout(()=>globe.pointOfView(INDIA,2200),300);
+  new ResizeObserver(()=>globe.width(el.clientWidth).height(el.clientHeight)).observe(el);
+  $("g-loading").remove();
+}
+
+function flyTo(lat,lng,tag){
+  if(!globe) return;
+  const c=globe.controls(); c.autoRotate=false;
+  const d=[{lat,lng,tag}];
+  globe.ringsData(d).pointsData(d).htmlElementsData(d);
+  if(reduce){ globe.pointOfView({lat,lng,altitude:0.22},0); return; }
+  // pull back, swing round, then dive in
+  const cur=globe.pointOfView();
+  const far=Math.max(cur.altitude,1.5);
+  globe.pointOfView({lat:(cur.lat+lat)/2,lng:(cur.lng+lng)/2,altitude:far},900);
+  setTimeout(()=>globe.pointOfView({lat,lng,altitude:0.9},900),900);
+  // on narrow screens aim a little south so the pin sits above the search box
+  const aim=el.clientWidth<600?lat-0.9:lat;
+  setTimeout(()=>globe.pointOfView({lat:aim,lng,altitude:0.2},1500),1800);
+}
+
+$("z-in").onclick=()=>{ if(!globe) return; const p=globe.pointOfView(); globe.pointOfView({...p,altitude:Math.max(p.altitude*0.55,0.06)},500); };
+$("z-out").onclick=()=>{ if(!globe) return; const p=globe.pointOfView(); globe.pointOfView({...p,altitude:Math.min(p.altitude*1.8,6)},500); };
+$("z-home").onclick=()=>{ if(globe) globe.pointOfView(INDIA,1400); };
+
+async function locate(q){
+  $("status").textContent="Finding…";
+  try{
+    const g=await geocode(q);
+    here=g;
+    $("r-place").textContent=g.label;
+    $("r-coords").textContent=`${Math.abs(g.lat).toFixed(3)}°${g.lat>=0?"N":"S"}  ${Math.abs(g.lng).toFixed(3)}°${g.lng>=0?"E":"W"}`;
+    flyTo(g.lat,g.lng,g.pincode||"Your home");
+    $("status").textContent = API_URL ? "Getting sunlight data…" : "Sunlight uses the slider below until the AWS API is live.";
+    if(API_URL) await fetchSunlight(g);
+  }catch(e){ $("status").textContent=e.message; }
+}
+
+async function fetchSunlight(g){
   try{
     const units=byBill?unitsFromBill(+$("use").value||0):(+$("use").value||0);
-    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({pincode:pc,monthly_units:units,roof_area:+$("roof").value||0,system_type:type})});
+    const body={monthly_units:units,roof_area:+$("roof").value||1,system_type:type};
+    if(g.pincode) body.pincode=g.pincode; else { body.lat=g.lat; body.lon=g.lng; }
+    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const d=await res.json(); if(!res.ok) throw new Error(d.error||"lookup failed");
-    $("psh").value=d.peak_sun_hours;
-    const place=(d.location&&d.location.place||"").split(",").slice(0,2).join(",");
-    $("status").textContent=`${d.peak_sun_hours} h/day for ${place||pc} (${d.assumptions.peak_sun_hours_source}).`;
-    render();
-  }catch(e){ $("status").textContent="Couldn't get sunlight data: "+e.message+". Using the slider value."; }
-  finally{ $("lookup").disabled=false; }
-};
+    $("psh").value=d.peak_sun_hours; render();
+    $("status").textContent=`${d.peak_sun_hours} peak sun hours a day (${d.assumptions.peak_sun_hours_source}).`;
+  }catch(e){ $("status").textContent="Couldn't get sunlight data: "+e.message+". Using the slider."; }
+}
+
+$("find").addEventListener("submit",e=>{ e.preventDefault(); locate($("where").value); });
+$("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(/^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
+
 if(API_URL) $("mode").textContent="Live data from AWS";
 render();
+initGlobe();
+locate($("where").value);
 </script>
 
 </body>

@@ -76,11 +76,35 @@ def _get_json(url: str) -> dict | list:
 # Pincode -> lat/lon
 # ---------------------------------------------------------------------------
 
+_PINCODES: dict[str, tuple[float, float]] | None = None
+
+
+def _pincode_table() -> dict[str, tuple[float, float]]:
+    global _PINCODES
+    if _PINCODES is None:
+        _PINCODES = {}
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "pincodes.csv")
+        try:
+            with open(path, encoding="utf-8") as f:
+                next(f)
+                for line in f:
+                    p, lat, lon = line.strip().split(",")
+                    _PINCODES[p] = (float(lat), float(lon))
+        except FileNotFoundError:
+            pass
+    return _PINCODES
+
+
 def geocode_pincode(pincode: str) -> dict:
     pincode = str(pincode).strip()
     if not (pincode.isdigit() and len(pincode) == 6):
         raise ValueError("pincode must be 6 digits")
 
+    # 1) bundled table (~18,700 Indian pincodes), no network needed
+    if (hit := _pincode_table().get(pincode)):
+        return {"lat": hit[0], "lon": hit[1], "place": f"Pincode {pincode}"}
+
+    # 2) OpenStreetMap Nominatim fallback, cached
     key = f"geocode/{pincode}.json"
     if (hit := cache_get(key)):
         return hit
