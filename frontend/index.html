@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-3fERAvqlKTawA+AnIhdAzIpMzoEjrE4eGPO8laR0Fic='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-4oJoYqHHFq6w3vYVWyyD2YLUuVEwGqh1STDBE+YOP/M='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -214,6 +214,14 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .pv::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 48%,rgba(255,255,255,.18) 48% 52%,transparent 52%),
   linear-gradient(transparent 32%,rgba(255,255,255,.12) 32% 34%,transparent 34% 65%,rgba(255,255,255,.12) 65% 67%,transparent 67%)}
 .cap{font-size:13px;color:var(--muted);margin:0}
+.pvhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pvhead .src{font:500 10px var(--f-mono);letter-spacing:.06em;color:var(--faint);text-transform:uppercase}
+.pvgrid{display:grid;gap:12px}
+.pvctl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;align-items:end}
+select{width:100%;font:500 15px var(--f-body);color:var(--ink);background:rgba(0,0,0,.25);border:1px solid var(--edge-soft);border-radius:10px;padding:9px 10px}
+select option{background:#0c1322;color:var(--ink)}
+.pvog{display:grid;gap:8px;border-top:1px solid var(--edge-soft);padding-top:12px}
+#pv-best{justify-self:start;padding:8px 12px}
 .chart{width:100%;height:auto;display:block}
 .chart text{fill:var(--muted);font:11px var(--f-mono)}
 details{font-size:14px;color:var(--muted);padding:0 4px}
@@ -402,11 +410,33 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
           </section>
           <div class="stats glass-2 rv">
             <div class="stat hl"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></div>
-            <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s">kWh per year</span></div>
+            <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s" id="s-gen-s">kWh per year</span></div>
             <div class="stat"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></div>
             <div class="stat"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></div>
             <div class="stat"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s">energy charge</span></div>
             <div class="stat"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></div>
+          </div>
+          <div class="box glass-2 rv" id="pv-box">
+            <div class="pvhead"><h2>Month by month</h2><span class="src">PVGIS 5.3 · EU JRC</span></div>
+            <svg class="chart" id="mchart" viewBox="0 0 520 210" role="img" aria-label="Solar generation and your use, month by month" hidden></svg>
+            <p class="cap" id="pv-note"></p>
+            <div class="pvgrid" id="pv-detail" hidden>
+              <p class="cap" id="pv-angle"></p>
+              <div class="pvctl">
+                <div class="field"><div class="psh"><label for="pv-tilt">Panel tilt</label><output id="pv-tilt-o" for="pv-tilt">28°</output></div>
+                  <input id="pv-tilt" type="range" min="0" max="45" step="1" value="28"></div>
+                <div class="field"><label for="pv-face">Facing</label>
+                  <select id="pv-face"><option value="0">South</option><option value="-45">South-east</option><option value="45">South-west</option><option value="-90">East</option><option value="90">West</option></select></div>
+              </div>
+              <button type="button" class="btn ghost" id="pv-best" hidden>Use the best angle</button>
+              <div class="chips" id="pv-loss"></div>
+              <p class="cap" id="pv-lcoe"></p>
+              <div class="pvog" id="pv-og" hidden>
+                <div class="field"><label for="pv-batt">Battery size</label>
+                  <div class="unit"><input id="pv-batt" type="number" min="1" max="50" step="0.5" value="8"><span>kWh</span></div></div>
+                <p class="cap" id="pv-og-text"></p>
+              </div>
+            </div>
           </div>
           <div class="pair">
             <div class="box glass-2 rv">
@@ -453,7 +483,8 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js" integrity="sha384-D1oR8FyBDsJWkPeydGJTh8nJg5/++9sqchzJuu+oGQPmgbwu3aJmoVj3BTowr6t6" crossorigin="anonymous"></script>
 <script>
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
-const API_URL = "";
+const LIVE_API = "";   // paste the ApiUrl from `sam deploy` here
+const API_URL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "/api/calculate" : LIVE_API;
 // Cesium ion token for the 3D globe and Google geocoding. Restrict it to this site's URLs on ion.cesium.com.
 const CESIUM_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImhsT2ZEcTJoQkN5RHE4R0wiLCJqdGkiOiJhNzA2NTBkOC0yYTgyLTQyYmEtYjVkNy1hZjc0OGNhNTIwZDIiLCJpZCI6NTE3NzI4LCJzdWIiOiJzYWduaWt2b2x0IiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlN1blNlbnNlIHdlYiIsImlhdCI6MTc5MTQ1MjkxOX0.wWesprMDB7YIHoQYUOD5-xSleY1PSLDrXR9xszDZZhc";
 
@@ -492,6 +523,11 @@ function render(){
   const psh=+$("psh").value; $("psh-o").textContent=psh.toFixed(2).replace(/0$/,"")+" h/day";
   const raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
   const r=calculate(units,roof,psh,type);
+  if(typeof pvLive==="function" && pvLive()){            // PVGIS simulation for exactly these inputs
+    Object.assign(r,{kw:pv.system_kw,gen:pv.yearly_generation_kwh,save:pv.yearly_savings,payback:pv.payback_years,
+      co2:pv.co2_saved_kg_per_year,gross:pv.cost_before_subsidy,sub:pv.subsidy,net:pv.cost_after_subsidy});
+    r.after=Math.max(r.before-r.save/12,0);
+  }
 
   $("pb").innerHTML = r.payback==null ? "—<small>years</small>" : r.payback.toFixed(1)+"<small>years</small>";
   $("lead-p").textContent = r.kw<=0 ? "Enter your electricity use and roof area to size a system."
@@ -508,6 +544,7 @@ function render(){
   $("s-gen").textContent=fmt(r.gen); $("s-co2").textContent=(r.co2/1000).toFixed(1)+" t";
   $("s-gross").textContent=inr(r.gross); $("s-sub").textContent=inr(r.sub);
   $("s-bill").textContent=`${inr(r.before)} → ${inr(r.after)}`;
+  $("s-gen-s").textContent = (typeof pvLive==="function" && pvLive()) ? "kWh per year · PVGIS" : "kWh per year";
 
   // roof plan: panels vs usable area
   const cols=Math.max(Math.min(Math.ceil(Math.sqrt(Math.max(roof/2.6,1))*1.4),10),3);
@@ -517,6 +554,7 @@ function render(){
   $("roof-cap").textContent = roof>0 ? `${panels} panels on about ${Math.round(panels*2.6)} m² of your ${fmt(roof)} m² roof.` : "Add your roof area.";
 
   drawChart(r);
+  if(typeof renderPV==="function") renderPV();
 }
 
 function drawChart(r){
@@ -726,7 +764,7 @@ function movePin(p){
   pinMoved=true;
   setPinning(false);
   showCoords();
-  if(API_URL) fetchSunlight(here);
+  pv=null; scheduleDetail();
 }
 let downs=new Map();
 el.addEventListener("pointerdown",e=>{ downs.set(e.pointerId,{x:e.clientX,y:e.clientY,t:performance.now(),multi:downs.size>0}); if(downs.size>1) for(const d of downs.values()) d.multi=true; },{capture:true,passive:true});
@@ -792,17 +830,81 @@ showHelp(helpPref!=="0");
 $("help-x").onclick=()=>showHelp(false);
 $("help-open").onclick=()=>showHelp(true);
 
-async function fetchSunlight(g){
+
+// ---------- PVGIS simulation through the SunSense API (PVGIS blocks direct browser calls) ----------
+let pv=null, pvKey="", pvTimer=null, pvBusy=false, pvTilt=null, pvAz=null, battery=null;
+function inputsNow(){ const raw=num("use",byBill?1e6:1e5); return {units:byBill?unitsFromBill(raw):raw, roof:num("roof",1e4), type}; }
+function detailKey(){ const i=inputsNow(); return JSON.stringify([here&&here.lat.toFixed(5),here&&here.lng.toFixed(5),Math.round(i.units),i.roof,i.type,pvTilt,pvAz,battery]); }
+async function runDetail(){
+  if(!API_URL||!here) return null;
+  const i=inputsNow(); if(!(i.roof>0) || !(i.units>0)) return null;
+  const key=detailKey();
+  const body={lat:+here.lat.toFixed(5),lon:+here.lng.toFixed(5),monthly_units:Math.round(i.units*10)/10,roof_area:i.roof,system_type:i.type,detail:true};
+  if(pvTilt!=null){ body.tilt=pvTilt; body.azimuth=pvAz; }
+  if(i.type==="off-grid" && battery) body.battery_kwh=battery;
+  const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),22000);
+  pvBusy=true; renderPV();
   try{
-    const units=byBill?unitsFromBill(num("use",1e6)):num("use",1e5);
-    const body={monthly_units:units,roof_area:num("roof",1e4)||1,system_type:type};
-    if(g.pincode) body.pincode=g.pincode; else { body.lat=g.lat; body.lon=g.lng; }
-    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    const d=await res.json(); if(!res.ok) throw new Error(d.error||"lookup failed");
-    $("psh").value=d.peak_sun_hours; render();
-    $("psh-h").textContent=`${d.peak_sun_hours} peak sun hours a day (${d.assumptions.peak_sun_hours_source}).`;
-  }catch(e){ $("psh-h").textContent="Couldn't get sunlight data: "+e.message+". Using the slider."; }
+    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
+    const d=await res.json(); if(!res.ok) throw new Error(d.error||"server error");
+    if(key!==detailKey()) return null;                       // inputs changed while waiting; a newer request follows
+    if(Number.isFinite(d.peak_sun_hours)){ $("psh").value=d.peak_sun_hours; $("psh-h").textContent=`${d.peak_sun_hours} peak sun hours a day for your roof (NASA POWER).`; }
+    pv=d; pvKey=key; return d;
+  }catch(e){ pv={model:"error"}; pvKey=key; return null; }
+  finally{ clearTimeout(to); pvBusy=false; render(); }
 }
+function scheduleDetail(){
+  if(!API_URL||!["results","expanded"].includes(cardState)) return;
+  clearTimeout(pvTimer); pvTimer=setTimeout(runDetail,700); pvBusy=true; renderPV();
+}
+const pvLive=()=>pv&&pv.model==="pvgis"&&pvKey===detailKey();
+const MONTHS="JFMAMJJASOND";
+function drawMonthly(gen,use){
+  const W=520,H=210,L=44,R=10,T=12,B=26, n=12, max=Math.max(...gen,use,1), step=niceStep(max/4), top=Math.ceil(max/step)*step;
+  const bw=(W-L-R)/n, y=v=>T+(H-T-B)*(1-v/top);
+  let s="";
+  for(let v=0;v<=top+1e-9;v+=step){ s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.1)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${Math.round(v)}</text>`; }
+  gen.forEach((g,i)=>{ const x=L+i*bw+bw*.18, h=y(0)-y(g);
+    s+=`<rect x="${x.toFixed(1)}" y="${y(g).toFixed(1)}" width="${(bw*.64).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="3" fill="${g>=use?"var(--sun)":"#c98a1a"}" fill-opacity="${g>=use?.9:.75}"/>`;
+    s+=`<text x="${(L+i*bw+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${MONTHS[i]}</text>`; });
+  s+=`<line x1="${L}" x2="${W-R}" y1="${y(use)}" y2="${y(use)}" stroke="var(--ink)" stroke-dasharray="5 4" stroke-width="1.5"/>`;
+  s+=`<text x="${W-R}" y="${y(use)-6}" text-anchor="end" style="fill:var(--ink)">your use ${Math.round(use)} kWh</text>`;
+  $("mchart").innerHTML=s;
+}
+const FACES=[[0,"South"],[-45,"South-east"],[45,"South-west"],[-90,"East"],[90,"West"]];
+function faceName(az){ let best=FACES[0]; for(const f of FACES) if(Math.abs(f[0]-az)<Math.abs(best[0]-az)) best=f; return best[1].toLowerCase(); }
+function renderPV(){
+  const note=$("pv-note"), det=$("pv-detail");
+  if(!API_URL){ $("mchart").hidden=true; det.hidden=true;
+    note.textContent="Month-by-month simulation, the best panel angle and battery modelling come from PVGIS through the SunSense server, which isn't connected on this page yet."; return; }
+  if(pvBusy && !pvLive()){ note.textContent="Running the PVGIS simulation for your roof…"; return; }
+  if(!pvLive()){ $("mchart").hidden=true; det.hidden=true;
+    note.textContent = pv&&pv.model!=="pvgis" ? "PVGIS isn't responding right now, so these numbers use the quick estimate." : "Calculate to run the PVGIS simulation for your roof."; return; }
+  const p=pv.pvgis, i=inputsNow();
+  $("mchart").hidden=false; det.hidden=false;
+  drawMonthly(p.monthly_kwh,i.units);
+  const low=p.monthly_kwh.indexOf(Math.min(...p.monthly_kwh)), high=p.monthly_kwh.indexOf(Math.max(...p.monthly_kwh));
+  const mname=k=>new Date(2026,k,1).toLocaleString("en-IN",{month:"long"});
+  note.textContent=`${fmt(p.yearly_kwh)} kWh a year from 18 years of satellite data. Best month ${mname(high)} (${fmt(p.monthly_kwh[high])} kWh), monsoon low ${mname(low)} (${fmt(p.monthly_kwh[low])} kWh).`;
+  $("pv-tilt").value=p.tilt??$("pv-tilt").value; $("pv-tilt-o").textContent=`${p.tilt}°`;
+  $("pv-face").value=String(FACES.reduce((b,f)=>Math.abs(f[0]-p.azimuth)<Math.abs(b[0]-p.azimuth)?f:b)[0]);
+  $("pv-angle").textContent = p.optimal ? `Best angle for this spot: ${p.tilt}° tilt, facing ${faceName(p.azimuth)}.` : `Your panels: ${p.tilt}° tilt, facing ${faceName(p.azimuth)}.`;
+  $("pv-best").hidden=p.optimal;
+  const L=p.losses_pct, pct=v=>v==null?"—":(v>0?"+":"")+v.toFixed(1)+"%";
+  $("pv-loss").innerHTML=[["Heat",L.temperature],["Angle",L.angle],["Spectrum",L.spectral],["Wiring & inverter",L.system],["Total",L.total]]
+    .map(([k,v])=>`<span class="chip">${k} ${pct(v)}</span>`).join("");
+  $("pv-lcoe").textContent = p.lcoe_per_kwh!=null ? `Your solar electricity works out to about ₹${p.lcoe_per_kwh.toFixed(2)} per unit over 25 years (before subsidy), against ₹${(i.units>200?7.15:5.85).toFixed(2)} for your top grid units.` : "";
+  const og=pv.offgrid; $("pv-og").hidden=!(type==="off-grid"&&og);
+  if(og){ $("pv-batt").value=og.battery_kwh;
+    $("pv-og-text").textContent=`With a ${og.battery_kwh} kWh battery and ${og.daily_use_kwh} kWh used a day, the battery fills up on ${og.days_full_pct}% of days. On average about ${og.shortfall_kwh_per_day} kWh a day still has to come from elsewhere (mostly monsoon evenings), and ${og.unused_kwh_per_day} kWh a day of sunshine goes unused.`; }
+}
+$("pv-tilt").addEventListener("input",()=>{ $("pv-tilt-o").textContent=$("pv-tilt").value+"°"; });
+$("pv-tilt").addEventListener("change",()=>{ pvTilt=+$("pv-tilt").value; pvAz=+$("pv-face").value; scheduleDetail(); });
+$("pv-face").addEventListener("change",()=>{ pvTilt=+$("pv-tilt").value; pvAz=+$("pv-face").value; scheduleDetail(); });
+$("pv-best").onclick=()=>{ pvTilt=pvAz=null; scheduleDetail(); };
+$("pv-batt").addEventListener("change",()=>{ battery=Math.min(Math.max(num("pv-batt",50),1),50); scheduleDetail(); });
+["use","roof"].forEach(id=>$(id).addEventListener("input",scheduleDetail));
+["by-units","by-bill","on","off"].forEach(id=>$(id).addEventListener("click",scheduleDetail));
 
 
 // ---------- the shape-shifting card ----------
@@ -918,7 +1020,7 @@ function goTo(g,ticket){
     flyTo(g.lat,g.lng,tag,()=>{ if(ticket===searchSeq) arrive(); });
   };
   if(viewer) fly(); else cesiumReady.then(()=>{ if(ticket===searchSeq) fly(); }).catch(()=>{ if(ticket===searchSeq) arrive(); });
-  if(API_URL) fetchSunlight(g);
+  pv=null; pvTilt=pvAz=null;
 }
 function backToSearch(msg){ $("status").textContent=msg||""; go("search"); }
 async function locate(q){
@@ -988,6 +1090,7 @@ function countUp(v){
 }
 $("calc-btn").onclick=async()=>{
   setPinning(false);
+  const sim = API_URL ? runDetail() : null;                 // PVGIS runs while the steps play
   const {psh,units,roof,r}=currentResult();
   const steps=[
     ["Reading sunlight for your roof",`${psh.toFixed(2).replace(/0$/,"")} peak sun hours a day`],
@@ -996,9 +1099,12 @@ $("calc-btn").onclick=async()=>{
     ["Projecting 25 years of savings", r.payback!=null ? `Pays back in about ${r.payback.toFixed(1)} years` : "Working out your savings"]];
   const per=reduce?0:600;
   progress({eyebrow:"Your solar plan",title:steps[0][0]+"…",sub:steps[0][1],indet:false,dur:per*steps.length},"calc");
+  if(sim) steps[0]=["Simulating your roof with PVGIS","18 years of satellite sunlight · EU Joint Research Centre"];
   for(const [t,sub] of steps){ $("p-title").textContent=t+"…"; $("p-sub").textContent=sub; await wait(per); if(cardState!=="calc") return; }
+  if(sim){ $("p-title").textContent="Finishing the PVGIS simulation…"; await Promise.race([sim,wait(20000)]); if(cardState!=="calc") return; }
   $("r-scroll").scrollTop=0;
-  go("results"); reveal(); countUp(r.payback);
+  render();
+  go("results"); reveal(); countUp(pvLive()?pv.payback_years:r.payback);
 };
 
 // ---------- expand / minimise ----------

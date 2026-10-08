@@ -175,13 +175,14 @@ sunsense/
 ## Running locally
 
 ```bash
-cd backend
-python -m pytest tests/
+python backend/dev_server.py          # page + API (incl. PVGIS) at http://localhost:8000
+cd backend && python -m pytest -q     # 71 tests
 ```
 
-*(Frontend and deployment steps to be added.)*
-
----
+The dev server serves `frontend/` and runs the Lambda handler at `POST /api/calculate`, so the
+PVGIS simulation (monthly generation, best panel angle, losses, cost per unit, off-grid battery)
+works on your laptop. PVGIS blocks direct browser calls, so on GitHub Pages these features switch on
+once `LIVE_API` in `frontend/index.html` points at the deployed AWS API.
 
 ## License
 

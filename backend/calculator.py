@@ -177,6 +177,17 @@ def calculate(
     }
 
 
+def monthly_savings(units: float, monthly_kwh: list[float]) -> dict:
+    """Net-metered savings month by month (generation offsets that month's use, top slab first)."""
+    before = energy_charge(units)
+    rows = []
+    for gen in monthly_kwh:
+        after = energy_charge(max(units - max(gen or 0.0, 0.0), 0.0))
+        rows.append(round(before - after, 2))
+    return {"monthly_savings": [round(x) for x in rows], "yearly_savings": round(sum(rows)),
+            "monthly_bill_before": round(before)}
+
+
 def calculate_from_bill(monthly_bill: float, roof_area: float, location: dict | None = None,
                         system_type: str = "on-grid") -> dict:
     """Convenience wrapper when the user gives ₹ bill instead of units."""

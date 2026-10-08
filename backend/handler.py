@@ -24,6 +24,8 @@ import re
 
 from calculator import MAX_ROOF_M2, MAX_UNITS, calculate, units_from_bill
 from data_sources import resolve_location
+import pvgis
+from calculator import GRID_EMISSION_FACTOR, monthly_savings
 
 MAX_BODY_BYTES = 2048
 MAX_BILL = 1_000_000
@@ -82,6 +84,33 @@ def _num(body: dict, key: str, lo: float, hi: float, required: bool = False):
     return float(v)
 
 
+def _add_pvgis(result, location, units, system_type, tilt, azimuth, battery):
+    """Replace the quick estimate with a PVGIS simulation; on any upstream problem keep the estimate."""
+    try:
+        pv = pvgis.pvcalc(location["lat"], location["lon"], result["system_kw"], tilt, azimuth,
+                          system_cost=result["cost_before_subsidy"])
+        ms = monthly_savings(units, pv["monthly_kwh"])
+        gen = pv["yearly_kwh"]
+        result.update({
+            "model": "pvgis",
+            "yearly_generation_kwh": round(gen),
+            "monthly_generation_kwh": pv["monthly_kwh"],
+            "monthly_savings": ms["monthly_savings"],
+            "yearly_savings": ms["yearly_savings"],
+            "payback_years": round(result["cost_after_subsidy"] / ms["yearly_savings"], 1) if ms["yearly_savings"] > 0 else None,
+            "co2_saved_kg_per_year": round(gen * GRID_EMISSION_FACTOR),
+            "pvgis": pv,
+        })
+        if system_type == "off-grid":
+            daily = units / 30
+            result["offgrid"] = pvgis.shscalc(location["lat"], location["lon"], result["system_kw"],
+                                              battery or max(round(daily, 1), 1.0), daily, pv["tilt"] or 23, pv["azimuth"] or 0)
+    except Exception as e:  # noqa: BLE001 — PVGIS down/slow/odd: fall back quietly
+        print(f"PVGIS fallback: {type(e).__name__}")
+        result["model"] = "estimate"
+        result["pvgis_note"] = "Detailed simulation unavailable right now; showing the quick estimate."
+
+
 def _origin(event: dict) -> str | None:
     h = event.get("headers") or {}
     return h.get("origin") or h.get("Origin")
@@ -135,8 +164,19 @@ def lambda_handler(event, context=None):
         else:
             pincode = None
 
+        detail = body.get("detail", False)
+        if not isinstance(detail, bool):
+            raise BadRequest("detail must be true or false")
+        tilt = _num(body, "tilt", 0, 60)
+        azimuth = _num(body, "azimuth", -180, 180)
+        if (tilt is None) != (azimuth is None):
+            raise BadRequest("give both tilt and azimuth, or neither")
+        battery = _num(body, "battery_kwh", 0.5, 50)
+
         location = resolve_location(pincode=pincode, lat=lat, lon=lon)
         result = calculate(units, roof, location, system_type=system_type)
+        if detail and result["system_kw"] > 0:
+            _add_pvgis(result, location, units, system_type, tilt, azimuth, battery)
         result["input"] = {"monthly_units": round(units, 1), "roof_area": roof, "system_type": system_type}
         result["location"] = {k: location.get(k) for k in ("pincode", "lat", "lon") if location.get(k) is not None}
         return _resp(200, result, origin)
