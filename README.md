@@ -186,4 +186,11 @@ once `LIVE_API` in `frontend/index.html` points at the deployed AWS API.
 
 ## License
 
-MIT
+Copyright © 2026 Sagnik Kumar Nath. **All rights reserved.** The code is public so it can be read and judged; it may not be copied, reused or redistributed without written permission. See [LICENSE](LICENSE).
+
+### Credits
+- [CesiumJS](https://cesium.com/platform/cesiumjs/) (Apache-2.0) and Google Photorealistic 3D Tiles via Cesium ion
+- [PVGIS](https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en) API and geospatial data © European Union, 2001–2026 (CC BY 4.0)
+- [NASA POWER](https://power.larc.nasa.gov/) solar data
+- Pincode coordinates from [pincode-lat-long](https://www.npmjs.com/package/pincode-lat-long) (ISC)
+- AI coding assistance: Claude (Anthropic)

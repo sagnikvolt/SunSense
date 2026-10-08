@@ -96,6 +96,8 @@ body:not(.st-search) #logo{opacity:0;transform:translateY(-16px);pointer-events:
 .logo{display:flex;align-items:center;gap:18px;font:700 clamp(46px,5.6vw,80px)/.95 var(--f-display);letter-spacing:-.035em;margin:0}
 .logo .sun{flex:none;width:.68em;height:.68em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff4c8,var(--sun) 45%,#ff8a00);
   box-shadow:0 0 0 8px rgba(255,190,46,.12),0 0 70px rgba(255,190,46,.55)}
+.copy{position:fixed;z-index:1;left:16px;bottom:10px;margin:0;font:400 11px var(--f-body);color:var(--faint);pointer-events:none}
+body:not(.st-search) .copy{display:none}
 #logo .sub{margin:0;color:var(--muted);font-size:18px;max-width:40ch;text-wrap:pretty}
 
 /* ---------- THE card ---------- */
@@ -316,6 +318,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   .bar{grid-template-columns:minmax(0,1fr) auto}
   .bar .gps{grid-column:1/-1;grid-row:2;justify-content:center}
   .lead{grid-template-columns:minmax(0,1fr)}
+  .copy{display:none}
   .help,body.fly .help{left:12px;right:62px;transform:none;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 40px);border-radius:16px;font-size:12px;max-width:none;align-items:flex-start;padding:8px 8px 8px 12px}
   .help-open,body.fly .help-open{left:auto;right:12px;transform:none;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 150px);padding:0 10px}
   body:not(.fly) .help,body:not(.fly) .help-open{display:none}
@@ -357,6 +360,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
   <h1 class="logo"><span class="sun" aria-hidden="true"></span>SunSense</h1>
   <p class="sub">See how much rooftop solar fits your home in West Bengal, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.</p>
 </div>
+<p class="copy">© 2026 Sagnik Kumar Nath</p>
 
 <section class="card glass" id="card" data-state="search" aria-live="polite">
 
@@ -520,7 +524,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 200px);max-width:calc
               <li>Off-grid battery cost isn't included yet.</li>
             </ul>
           </details>
-          <footer class="rv">Estimates only · confirm rates with WBSEDCL and pmsuryaghar.gov.in · <a href="https://github.com/sagnikvolt/SunSense">Source</a></footer>
+          <footer class="rv">© 2026 Sagnik Kumar Nath · All rights reserved · Estimates only, confirm rates with WBSEDCL and pmsuryaghar.gov.in · <a href="https://github.com/sagnikvolt/SunSense">Source</a></footer>
         </div>
       </div>
     </div>

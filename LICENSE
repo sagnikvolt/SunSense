@@ -1,21 +1,26 @@
-MIT License
+Copyright (c) 2026 Sagnik Kumar Nath. All rights reserved.
 
-Copyright (c) 2026 Sagnik Kumar Nath and the SunSense team
+SunSense — source code, design, text and data processing — is the original work of
+Sagnik Kumar Nath, created for the WeMakeDevs x AWS "Environmental Hacks" hackathon
+(8–11 October 2026).
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+The source code is published so that hackathon organisers, judges and visitors can
+read and evaluate it. No licence is granted to copy, modify, redistribute, host,
+sell, or use this code or any substantial part of it, in any project or product,
+without prior written permission from the author.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You may:
+  - view and read the source code;
+  - run the project locally for the purpose of evaluating or judging it;
+  - link to the repository and the live site.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+To ask for permission, contact the author via https://github.com/sagnikvolt.
+
+Third-party components keep their own licences and are credited in README.md:
+  - CesiumJS (Apache-2.0), Google Photorealistic 3D Tiles via Cesium ion (Google terms)
+  - PVGIS data and API © European Union, 2001–2026 (data under CC BY 4.0)
+  - NASA POWER data (public domain)
+  - Indian pincode coordinates from the "pincode-lat-long" npm package (ISC)
+  - Fonts from Google Fonts (SIL Open Font License)
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
