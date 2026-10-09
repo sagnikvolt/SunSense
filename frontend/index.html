@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-LhOtWeCFpnLgB9PbBC2LsM55B1n73mWeZB3JnKCyYKY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-Gic+q+NFA1hCePZmEk2sFTY6k+KO+DCf+w6EPlCxft4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home anywhere in India, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -403,6 +403,9 @@ h4.sub{margin:4px 0 0;font:500 11px var(--f-mono);letter-spacing:.08em;text-tran
 /* ---------- map controls + help ---------- */
 .zoomctl{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:grid;gap:8px;z-index:4}
 .zoomctl button{--tint:rgba(6,12,28,.45);width:42px;height:42px;border-radius:14px;color:var(--ink);font:500 18px var(--f-mono);cursor:pointer}
+.zoomctl .flypill{--tint:rgba(6,12,28,.45);position:absolute;right:0;top:calc(100% + 10px);display:flex;gap:2px;padding:3px;border-radius:999px;white-space:nowrap}
+.zoomctl .flypill button{width:auto;height:auto;padding:4px 10px;border-radius:999px;font:600 11.5px var(--f-body);color:var(--muted);background:transparent;border:0;letter-spacing:.02em}
+.zoomctl .flypill button[aria-pressed=true]{background:rgba(255,190,46,.9);color:#1a1200}
 .help{--tint:rgba(6,12,28,.5);position:fixed;z-index:2;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);
   width:max-content;max-width:min(760px,calc(100vw - 40px));border-radius:22px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:12px;
   font:400 13px/1.35 var(--f-body);color:var(--muted);transition:left 1.2s var(--ease)}
@@ -467,6 +470,10 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
   <button type="button" class="glass" id="z-out" aria-label="Zoom out">−</button>
   <button type="button" class="glass" id="z-home" aria-label="Back to all of India">⌂</button>
   <button type="button" class="glass" id="z-sfx" aria-pressed="true" aria-label="Flight sound effects" title="Flight sound effects">🔊</button>
+  <div class="flypill glass" role="group" aria-label="Flight animation">
+    <button type="button" id="fly-smooth" aria-pressed="false" title="Smooth fly-in">Smooth</button>
+    <button type="button" id="fly-switch" aria-pressed="true" title="Shoot up, slide across, drop down">Switch</button>
+  </div>
 </div>
 
 <div class="help glass" id="help" role="note">
@@ -1132,8 +1139,10 @@ function stopOrbit(){
 
 // ---------- "Switch" flight: the camera shoots straight up, slides across, then drops down in steps ----------
 // (just for fun; reduced-motion users get the normal instant move)
-let flightTok=0, sfxOn=true, actx=null;
-try{ sfxOn=localStorage.getItem("ss-sfx")!=="0"; }catch{}
+let flightTok=0, sfxOn=true, actx=null, flyMode="switch";
+try{ sfxOn=localStorage.getItem("ss-sfx")!=="0"; flyMode=localStorage.getItem("ss-fly")==="smooth"?"smooth":"switch"; }catch{}
+function setFlyMode(m){ flyMode=m; press(m==="switch"?$("fly-switch"):$("fly-smooth"), m==="switch"?$("fly-smooth"):$("fly-switch"));
+  $("z-sfx").hidden=m!=="switch"; try{ localStorage.setItem("ss-fly",m); }catch{} }
 function sfx(kind){
   if(!sfxOn) return;
   try{
@@ -1176,10 +1185,11 @@ async function switchFlight(lat,lng,land){
   land(1.4);
 }
 $("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
+$("fly-smooth").onclick=()=>setFlyMode("smooth"); $("fly-switch").onclick=()=>setFlyMode("switch"); setFlyMode(flyMode);
 $("z-sfx").onclick=()=>{ sfxOn=!sfxOn; $("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
   try{ localStorage.setItem("ss-sfx",sfxOn?"1":"0"); }catch{} if(sfxOn) sfx("thud"); };
 
-const FLIGHT=6.6;   // seconds, roughly: up, across, down, settle
+const FLIGHT=6;    // seconds for either style (switch: up, across, down, settle)
 function flyTo(lat,lng,tag,onArrive){
   if(!viewer) return;
   flightTok++; viewer.camera.cancelFlight(); document.body.classList.remove("switching");
@@ -1205,7 +1215,7 @@ function flyTo(lat,lng,tag,onArrive){
         .then(([p])=>p||ground).catch(()=>ground)
         .then(t=>{ pin.position=t; orbit={target:t,heading:0,auto:true}; aimOrbit(viewer); });
     }});
-  if(reduce) land(0); else switchFlight(lat,lng,land).catch(()=>{ if(tok===flightTok){ document.body.classList.remove("switching"); land(1.4); } });
+  if(reduce) land(0); else if(flyMode==="smooth") land(FLIGHT); else switchFlight(lat,lng,land).catch(()=>{ if(tok===flightTok){ document.body.classList.remove("switching"); land(1.4); } });
 }
 
 function goHome(){
