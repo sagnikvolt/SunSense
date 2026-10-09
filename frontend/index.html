@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-Gic+q+NFA1hCePZmEk2sFTY6k+KO+DCf+w6EPlCxft4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-tyrTK22aNvq8NQap0OntAGj3ThSfdqWmiKPOar2ag7w='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home anywhere in India, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -1173,7 +1173,7 @@ async function switchFlight(lat,lng,land){
   const tok=flightTok, E=Cesium.EasingFunction, c=Cesium.Cartographic.fromCartesian(viewer.camera.positionWC);
   const lon0=Cesium.Math.toDegrees(c.longitude), lat0=Cesium.Math.toDegrees(c.latitude), h0=c.height;
   const km=Cesium.Cartesian3.distance(Cesium.Cartesian3.fromDegrees(lon0,lat0,0),Cesium.Cartesian3.fromDegrees(lng,lat,0))/1000;
-  const TOP=Math.min(Math.max(km*1300,90000),650000), MID=TOP*0.08, LOW=3000;
+  const TOP=Math.min(Math.max(km*1300,90000),650000), MID=TOP*0.08, LOW=2000;
   document.body.classList.add("switching");
   try{
     if(h0<TOP*0.7) for(const H of [LOW,MID,TOP].filter(H=>H>h0*1.4)){ sfx("up"); swFlash(); await hop(lon0,lat0,H,.5,E.QUADRATIC_OUT); await swWait(230); }
@@ -1182,7 +1182,7 @@ async function switchFlight(lat,lng,land){
   }catch{ if(tok!==flightTok) return; }
   if(tok!==flightTok) return;
   document.body.classList.remove("switching");
-  land(1.4);
+  land(1.2,LOW);
 }
 $("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
 $("fly-smooth").onclick=()=>setFlyMode("smooth"); $("fly-switch").onclick=()=>setFlyMode("switch"); setFlyMode(flyMode);
@@ -1206,9 +1206,10 @@ function flyTo(lat,lng,tag,onArrive){
   const back=(RANGE*Math.cos(Cesium.Math.toRadians(-PITCH)))/111320;
   const height=RANGE*Math.sin(Cesium.Math.toRadians(-PITCH));
   const tok=flightTok;
-  const land=dur=>viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,height),
+  // maxH caps the arc: after a switch drop the last move must only go down, never bounce back up.
+  const land=(dur,maxH)=>viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,height),
     orientation:{heading:0,pitch:Cesium.Math.toRadians(PITCH),roll:0},
-    duration:dur, maximumHeight:2.2e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT,
+    duration:dur, maximumHeight:maxH||2.2e6, easingFunction:maxH?Cesium.EasingFunction.QUADRATIC_OUT:Cesium.EasingFunction.QUINTIC_IN_OUT,
     complete:()=>{ if(tok!==flightTok) return;
       if(onArrive) onArrive();
       viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(ground)])

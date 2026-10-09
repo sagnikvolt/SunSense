@@ -1160,7 +1160,7 @@ async function switchFlight(lat,lng,land){
   const tok=flightTok, E=Cesium.EasingFunction, c=Cesium.Cartographic.fromCartesian(viewer.camera.positionWC);
   const lon0=Cesium.Math.toDegrees(c.longitude), lat0=Cesium.Math.toDegrees(c.latitude), h0=c.height;
   const km=Cesium.Cartesian3.distance(Cesium.Cartesian3.fromDegrees(lon0,lat0,0),Cesium.Cartesian3.fromDegrees(lng,lat,0))/1000;
-  const TOP=Math.min(Math.max(km*1300,90000),650000), MID=TOP*0.08, LOW=3000;
+  const TOP=Math.min(Math.max(km*1300,90000),650000), MID=TOP*0.08, LOW=2000;
   document.body.classList.add("switching");
   try{
     if(h0<TOP*0.7) for(const H of [LOW,MID,TOP].filter(H=>H>h0*1.4)){ sfx("up"); swFlash(); await hop(lon0,lat0,H,.5,E.QUADRATIC_OUT); await swWait(230); }
@@ -1169,7 +1169,7 @@ async function switchFlight(lat,lng,land){
   }catch{ if(tok!==flightTok) return; }
   if(tok!==flightTok) return;
   document.body.classList.remove("switching");
-  land(1.4);
+  land(1.2,LOW);
 }
 $("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
 $("fly-smooth").onclick=()=>setFlyMode("smooth"); $("fly-switch").onclick=()=>setFlyMode("switch"); setFlyMode(flyMode);
@@ -1193,9 +1193,10 @@ function flyTo(lat,lng,tag,onArrive){
   const back=(RANGE*Math.cos(Cesium.Math.toRadians(-PITCH)))/111320;
   const height=RANGE*Math.sin(Cesium.Math.toRadians(-PITCH));
   const tok=flightTok;
-  const land=dur=>viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,height),
+  // maxH caps the arc: after a switch drop the last move must only go down, never bounce back up.
+  const land=(dur,maxH)=>viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lng,lat-back,height),
     orientation:{heading:0,pitch:Cesium.Math.toRadians(PITCH),roll:0},
-    duration:dur, maximumHeight:2.2e6, easingFunction:Cesium.EasingFunction.QUINTIC_IN_OUT,
+    duration:dur, maximumHeight:maxH||2.2e6, easingFunction:maxH?Cesium.EasingFunction.QUADRATIC_OUT:Cesium.EasingFunction.QUINTIC_IN_OUT,
     complete:()=>{ if(tok!==flightTok) return;
       if(onArrive) onArrive();
       viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(ground)])
