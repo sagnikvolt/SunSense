@@ -1127,9 +1127,9 @@ function stopOrbit(){
 // ---------- "Switch" flight: the camera shoots straight up, slides across, then drops down in steps ----------
 // (just for fun; reduced-motion users get the normal instant move)
 let flightTok=0, sfxOn=true, actx=null, flyMode="smooth";
-try{ sfxOn=localStorage.getItem("ss-sfx")!=="0"; flyMode=localStorage.getItem("ss-fly")==="switch"?"switch":"smooth"; }catch{}
+try{ sfxOn=localStorage.getItem("ss-sfx")!=="0"; flyMode=localStorage.getItem("ss-fly2")==="switch"?"switch":"smooth"; }catch{}
 function setFlyMode(m){ flyMode=m; press(m==="switch"?$("fly-switch"):$("fly-smooth"), m==="switch"?$("fly-smooth"):$("fly-switch"));
-  $("z-sfx").hidden=m!=="switch"; try{ localStorage.setItem("ss-fly",m); }catch{} }
+  $("z-sfx").hidden=m!=="switch"; try{ localStorage.setItem("ss-fly2",m); }catch{} }
 function sfx(kind){
   if(!sfxOn) return;
   try{
