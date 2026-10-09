@@ -31,7 +31,7 @@ MAX_BODY_BYTES = 2048
 MAX_BILL = 1_000_000
 PINCODE_RE = re.compile(r"^[1-9][0-9]{5}$")
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
-    "ALLOWED_ORIGINS", "https://sagnikvolt.github.io,http://localhost:8000").split(",") if o.strip()]
+    "ALLOWED_ORIGINS", "https://sunsense.sagniknath.in,https://sagnikvolt.github.io,http://localhost:8000").split(",") if o.strip()]
 INDIA = {"lat": (6.0, 37.5), "lon": (68.0, 97.5)}
 
 

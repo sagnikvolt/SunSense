@@ -5,7 +5,7 @@ Description: SunSense - rooftop solar sizing & payback API (Lambda + HTTP API + 
 Parameters:
   AllowedOrigins:
     Type: CommaDelimitedList
-    Default: "https://sagnikvolt.github.io,http://localhost:8000"
+    Default: "https://sunsense.sagniknath.in,https://sagnikvolt.github.io,http://localhost:8000"
     Description: Web origins allowed to call the API (add your Amplify URL here)
 
 Globals:

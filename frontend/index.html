@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-QF12s1FBCSIzUV3bIiaycMLcNs0bklgijWeM3sSbGvA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-H9Lu+o9nooFjV7dEO9dNfPRP9QmsdOQtP/fic+3Gzug='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home anywhere in India, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -233,6 +233,18 @@ input[type=number]{width:100%;font:500 17px var(--f-mono);color:var(--ink);backg
 .seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;gap:3px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--edge-soft)}
 .seg button{font:600 14px var(--f-body);background:transparent;color:var(--muted);border:0;border-radius:9px;padding:8px;cursor:pointer}
 .seg button[aria-pressed=true]{background:rgba(255,255,255,.16);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+.srcbar{display:grid;gap:8px;padding:12px 14px;border-radius:16px}
+.srcbar .src-st{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;line-height:1.45}
+.srcbar .src-st i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--muted)}
+.srcbar .src-st[data-s=ok] i{background:var(--good)} .srcbar .src-st[data-s=busy] i{background:var(--sun);animation:pulse 1s ease-in-out infinite}
+.srcbar .src-st[data-s=fail] i{background:var(--gridc)}
+.srcbar .src-st b{color:var(--ink);font-weight:600}
+.srcbar .src-st a{color:var(--sun-ink);text-underline-offset:2px}
+.fail{display:grid;gap:6px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,111,142,.35);background:rgba(255,111,142,.08);font-size:13.5px;line-height:1.45}
+.fail b{color:var(--ink)} .fail .fix{color:var(--muted)}
+.fail button{justify-self:start;font:600 13px var(--f-body);color:var(--ink);background:rgba(255,255,255,.1);border:1px solid var(--edge-soft);border-radius:9px;padding:6px 12px;cursor:pointer}
+@keyframes pulse{50%{opacity:.35}}
 input[type=range]{width:100%;accent-color:var(--sun)}
 .psh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .psh output{font:500 16px var(--f-mono)}
@@ -551,6 +563,13 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
           </form>
         </div>
         <div class="col">
+          <div class="srcbar glass-2 rv">
+            <div class="seg" role="group" aria-label="Which numbers to show">
+              <button type="button" id="src-est" aria-pressed="false">Quick estimate</button>
+              <button type="button" id="src-pv" aria-pressed="true">PVGIS simulation</button>
+            </div>
+            <div class="src-st" id="src-st" data-s="busy" aria-live="polite"><i aria-hidden="true"></i><span id="src-txt">Running the PVGIS simulation for your roof…</span></div>
+          </div>
           <section class="lead glass-2 rv">
             <div class="payback" id="pb">4.1<small>years</small></div>
             <div>
@@ -581,6 +600,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
             <div class="pvhead"><h2>Month by month</h2><span class="src">PVGIS 5.3 · EU JRC</span></div>
             <svg class="chart" id="mchart" viewBox="0 0 520 210" role="img" aria-label="Solar generation and your use, month by month" hidden></svg>
             <p class="cap" id="pv-note"></p>
+            <div class="fail" id="pv-fail" hidden></div>
             <div class="pvgrid" id="pv-detail" hidden>
               <p class="cap" id="pv-angle"></p>
               <div class="pvctl">
@@ -756,11 +776,13 @@ $("off").onclick=()=>{ type="off-grid"; press($("off"),$("on")); render(); };
 ["use","roof","psh","esc","rate"].forEach(id=>$(id).addEventListener("input",render));
 $("f").addEventListener("submit",e=>e.preventDefault());
 
+let useEst=false;                                         // user picked "Quick estimate" in the source toggle
+function usingPV(){ return !useEst && typeof pvLive==="function" && pvLive(); }
 function render(){
   const psh=+$("psh").value; $("psh-o").textContent=psh.toFixed(2).replace(/0$/,"")+" h/day";
   const raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
-  const r=calculate(units,roof,psh,type);
-  if(typeof pvLive==="function" && pvLive()){            // PVGIS simulation for exactly these inputs
+  const r=calculate(units,roof,psh,type); window.__estGen=r.gen;
+  if(usingPV()){            // PVGIS simulation for exactly these inputs (unless the user chose the quick estimate)
     Object.assign(r,{kw:pv.system_kw,gen:pv.yearly_generation_kwh,co2:pv.co2_saved_kg_per_year,gross:pv.cost_before_subsidy});
     r.sub=Math.min(subsidy(r.kw,type),r.gross); r.net=r.gross-r.sub;
     r.monthly=pv.pvgis&&pv.pvgis.monthly_kwh&&pv.pvgis.monthly_kwh.length===12?pv.pvgis.monthly_kwh:null;
@@ -786,7 +808,7 @@ function render(){
   $("s-gen").textContent=fmt(r.gen); $("s-co2").textContent=(r.co2/1000).toFixed(1)+" t";
   $("s-gross").textContent=inr(r.gross); $("s-sub").textContent=inr(r.sub);
   $("s-bill").textContent=`${inr(r.before)} → ${inr(r.after)}`;
-  $("s-gen-s").textContent = (typeof pvLive==="function" && pvLive()) ? "kWh per year · PVGIS" : "kWh per year";
+  $("s-gen-s").textContent = usingPV() ? "kWh per year · PVGIS" : "kWh per year · quick estimate";
 
   // roof plan: panels vs usable area
   const cols=Math.max(Math.min(Math.ceil(Math.sqrt(Math.max(roof/2.6,1))*1.4),10),3);
@@ -1227,6 +1249,19 @@ $("help-x").onclick=()=>showHelp(false);
 $("help-open").onclick=()=>showHelp(true);
 
 
+// ---------- Why a PVGIS request failed, in plain words, and what to do about it ----------
+function apiFail(e,status,msg){
+  if(e&&e.name==="AbortError") return {why:"PVGIS took too long to answer.",fix:"It's often busy for a moment. Tap Retry."};
+  if(status===429) return {why:"Too many requests in a short time.",fix:"Wait a few seconds, then tap Retry."};
+  if(status===502||status===503||status===504) return {why:"PVGIS (EU Joint Research Centre) isn't responding right now.",fix:"That's on their side and usually clears within minutes. Tap Retry in a minute; the quick estimate is shown meanwhile."};
+  if(status>=400&&status<500) return {why:msg?String(msg).slice(0,160):"The request was rejected.",fix:"Check the inputs (a location in India, sensible numbers) and try again."};
+  if(status>=500) return {why:"The SunSense server hit an error.",fix:"Tap Retry. If it keeps happening, use the quick estimate for now."};
+  if(typeof navigator!=="undefined"&&navigator.onLine===false) return {why:"You're offline.",fix:"Reconnect to the internet, then tap Retry."};
+  return {why:"Couldn't reach the SunSense server.",fix:"Tap Retry. If it keeps failing, an ad-blocker, VPN or college/office Wi-Fi may be blocking amazonaws.com. Try mobile data, or turn the blocker off for this site."};
+}
+function escH(t){ return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+const FALLBACK_FAIL={why:"Our server couldn't get an answer from PVGIS in time.",fix:"PVGIS is probably busy. Tap Retry in a minute; the quick estimate is shown meanwhile."};
+
 // ---------- PVGIS simulation through the SunSense API (PVGIS blocks direct browser calls) ----------
 let pv=null, pvKey="", pvTimer=null, pvBusy=false, pvTilt=null, pvAz=null, battery=null;
 function inputsNow(){ const raw=num("use",byBill?1e6:1e5); return {units:byBill?unitsFromBill(raw):raw, roof:num("roof",1e4), type}; }
@@ -1240,13 +1275,15 @@ async function runDetail(){
   if(i.type==="off-grid" && battery) body.battery_kwh=battery;
   const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),22000);
   pvBusy=true; renderPV();
+  let status=0, msg="";
   try{
     const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
-    const d=await res.json(); if(!res.ok) throw new Error(d.error||"server error");
+    status=res.status; const d=await res.json().catch(()=>({})); if(!res.ok){ msg=d.error||""; throw new Error(msg||"server error"); }
     if(key!==detailKey()) return null;                       // inputs changed while waiting; a newer request follows
+    if(d.model!=="pvgis") d.fail=FALLBACK_FAIL;
     if(Number.isFinite(d.peak_sun_hours)){ $("psh").value=d.peak_sun_hours; $("psh-h").textContent=`${d.peak_sun_hours} peak sun hours a day for your roof (NASA POWER).`; }
     pv=d; pvKey=key; return d;
-  }catch(e){ pv={model:"error"}; pvKey=key; return null; }
+  }catch(e){ if(key===detailKey()){ pv={model:"error",fail:apiFail(e,status,msg)}; pvKey=key; } return null; }
   finally{ clearTimeout(to); pvBusy=false; render(); }
 }
 function scheduleDetail(){
@@ -1269,13 +1306,29 @@ function drawMonthly(gen,use){
 }
 const FACES=[[0,"South"],[-45,"South-east"],[45,"South-west"],[-90,"East"],[90,"West"]];
 function faceName(az){ let best=FACES[0]; for(const f of FACES) if(Math.abs(f[0]-az)<Math.abs(best[0]-az)) best=f; return best[1].toLowerCase(); }
+function setSrc(state,html){ const st=$("src-st"); st.dataset.s=state; $("src-txt").innerHTML=html; }
+function renderSrc(){
+  const live=typeof pvLive==="function"&&pvLive(), failed=pv&&pvKey===detailKey()&&pv.fail;
+  $("src-pv").disabled=!live; press(useEst||!live?$("src-est"):$("src-pv"), useEst||!live?$("src-pv"):$("src-est"));
+  if(!API_URL) return setSrc("idle","Showing the <b>quick estimate</b>.");
+  if(pvBusy&&!live) return setSrc("busy","Running the <b>PVGIS simulation</b> for your roof… the quick estimate is shown meanwhile.");
+  if(live&&!useEst) return setSrc("ok",`Showing the <b>PVGIS simulation</b>: 19 years of satellite data (2005–2023) for this exact roof.`);
+  if(live&&useEst) return setSrc("ok",`Showing the <b>quick estimate</b> (India-wide PVGIS yield map + NASA sun hours). PVGIS gives ${fmt(pv.yearly_generation_kwh)} kWh a year vs ${fmt((window.__estGen)||0)} here.`);
+  if(failed) return setSrc("fail",`PVGIS didn't run, so you're seeing the <b>quick estimate</b>. ${escH(pv.fail.why)} <a href="#pv-box" id="src-why">What to do</a>`);
+  setSrc("idle","Showing the <b>quick estimate</b>.");
+}
 function renderPV(){
-  const note=$("pv-note"), det=$("pv-detail");
+  renderSrc();
+  const note=$("pv-note"), det=$("pv-detail"), fb=$("pv-fail");
+  const failed=pv&&pvKey===detailKey()&&pv.fail&&!pvBusy;
+  fb.hidden=!failed;
+  if(failed){ fb.innerHTML=`<span><b>Why:</b> ${escH(pv.fail.why)}</span><span class="fix"><b>What to do:</b> ${escH(pv.fail.fix)}</span><button type="button" id="pv-retry">Retry PVGIS</button>`;
+    $("pv-retry").onclick=()=>{ pvKey=""; pv=null; runDetail(); }; }
   if(!API_URL){ $("mchart").toggleAttribute("hidden",true); det.hidden=true;
     note.textContent="Month-by-month simulation, the best panel angle and battery modelling are switching on soon."; return; }
   if(pvBusy && !pvLive()){ note.textContent="Running the PVGIS simulation for your roof…"; return; }
   if(!pvLive()){ $("mchart").toggleAttribute("hidden",true); det.hidden=true;
-    note.textContent = pv&&pv.model!=="pvgis" ? "PVGIS isn't responding right now, so these numbers use the quick estimate." : "Calculate to run the PVGIS simulation for your roof."; return; }
+    note.textContent = failed ? "The month-by-month simulation needs PVGIS. Your numbers above use the quick estimate for now." : "Calculate to run the PVGIS simulation for your roof."; return; }
   const p=pv.pvgis, i=inputsNow();
   $("mchart").toggleAttribute("hidden",false); det.hidden=false;
   drawMonthly(p.monthly_kwh,i.units);
@@ -1299,6 +1352,9 @@ $("pv-tilt").addEventListener("input",()=>{ $("pv-tilt-o").textContent=$("pv-til
 $("pv-tilt").addEventListener("change",()=>{ pvTilt=+$("pv-tilt").value; pvAz=+$("pv-face").value; scheduleDetail(); });
 $("pv-face").addEventListener("change",()=>{ pvTilt=+$("pv-tilt").value; pvAz=+$("pv-face").value; scheduleDetail(); });
 $("pv-best").onclick=()=>{ pvTilt=pvAz=null; scheduleDetail(); };
+$("src-est").onclick=()=>{ useEst=true; render(); };
+$("src-st").addEventListener("click",e=>{ if(e.target.id==="src-why"){ e.preventDefault(); $("pv-box").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"}); } });
+$("src-pv").onclick=()=>{ if(!pvLive()) return; useEst=false; render(); };
 $("pv-batt").addEventListener("change",()=>{ battery=Math.min(Math.max(num("pv-batt",50),1),50); scheduleDetail(); });
 ["use","roof"].forEach(id=>$(id).addEventListener("input",scheduleDetail));
 ["by-units","by-bill","on","off"].forEach(id=>$(id).addEventListener("click",scheduleDetail));
@@ -1416,12 +1472,13 @@ async function runLab(){
   let body; try{ body=readForm(); }catch(e){ $("l-status").textContent=e.message; return; }
   labBusy=true; $("l-run").disabled=true; $("l-status").textContent= labTool==="tmy"||labTool==="hourly" ? "Fetching 8,760 hours from PVGIS…" : "Asking PVGIS…";
   const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),28000);
+  let status=0, msg="";
   try{
     const res=await fetch(LAB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
-    const d=await res.json(); if(!res.ok) throw new Error(d.error||"PVGIS error");
+    status=res.status; const d=await res.json().catch(()=>({})); if(!res.ok){ msg=d.error||""; throw new Error(msg||"PVGIS error"); }
     labData={request:body,result:d}; $("l-status").textContent=`${d.source} · ${d.radiation_db||""} · ${d.years&&d.years[0]?d.years.join("–"):""} · elevation ${d.elevation_m??"—"} m`;
     renderLab(d); $("l-csv").disabled=$("l-json").disabled=false;
-  }catch(e){ $("l-status").textContent = e.name==="AbortError" ? "PVGIS took too long. Try again." : String(e.message||e).slice(0,160); }
+  }catch(e){ const f=apiFail(e,status,msg); $("l-status").innerHTML=`<span class="fail" style="display:grid"><span><b>Why it failed:</b> ${escH(f.why)}</span><span class="fix"><b>What to do:</b> ${escH(f.fix)}</span></span>`; }
   finally{ clearTimeout(to); labBusy=false; $("l-run").disabled=false; }
 }
 $("l-run").onclick=runLab;
