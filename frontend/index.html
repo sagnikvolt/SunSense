@@ -194,9 +194,9 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .pair{display:grid;gap:14px}
 #state-h a{color:inherit}
 .cmp-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.cmp-kpis div{border:1px solid var(--edge-soft);border-radius:12px;padding:8px 10px;display:grid;gap:2px;min-width:0}
+.cmp-kpis div{border:1px solid var(--edge-soft);border-radius:12px;padding:8px 10px;display:grid;gap:2px;min-width:0;align-content:start}
 .cmp-kpis .k{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.cmp-kpis .v{font:700 18px var(--f-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-kpis .v{font:700 18px/1.2 var(--f-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmp-kpis .grid .v{color:var(--gridc)} .cmp-kpis .save .v{color:var(--good)}
 .cmp-kpis .s{font-size:12px;color:var(--muted)}
 .cmp-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
@@ -208,7 +208,14 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .cmp-t th:first-child,.cmp-t td:first-child{text-align:left}
 .cmp-t th{font:600 11px var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .cmp-t td.g{color:var(--gridc)} .cmp-t td.s{color:var(--sun-ink)} .cmp-t td.v{color:var(--good)}
-.card[data-state=expanded] .cmp-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (min-width:760px){.card[data-state=expanded] .cmp-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:520px){
+  .cmp-kpis .v{font-size:17px;line-height:1.2;white-space:normal;overflow:visible;overflow-wrap:anywhere}
+  .cmp-kpis .k{font-size:10.5px;letter-spacing:.04em}
+  .cmp-t{font-size:12px}
+  .cmp-t th,.cmp-t td{padding:6px 4px}
+  .cmp-t th{font-size:10px;letter-spacing:.02em;white-space:normal}
+}
 .card[data-state=expanded] .cols{grid-template-columns:minmax(0,.85fr) minmax(0,1.3fr)}
 .card[data-state=expanded] .pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .card[data-state=expanded] .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -262,8 +269,8 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .mlegend .bar{height:8px;border-radius:99px;background:linear-gradient(90deg,#342878 0%,#962d6e 20%,#e25634 37%,#ffa01e 53%,#ffcd46 73%,#fff4be 100%)}
 .mlegend .ticks{display:flex;justify-content:space-between;font:400 11px var(--f-mono);color:var(--muted)}
 .src2{margin:0;font-size:10px;color:var(--faint)}
-.pvhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.pvhead .src{font:500 10px var(--f-mono);letter-spacing:.06em;color:var(--faint);text-transform:uppercase}
+.pvhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}
+.pvhead .src{font:500 10px var(--f-mono);letter-spacing:.06em;color:var(--faint);text-transform:uppercase;white-space:nowrap}
 .pvgrid{display:grid;gap:12px}
 .pvctl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;align-items:end}
 select{width:100%;font:500 15px var(--f-body);color:var(--ink);background:rgba(0,0,0,.25);border:1px solid var(--edge-soft);border-radius:10px;padding:9px 10px}
