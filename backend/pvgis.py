@@ -144,6 +144,34 @@ def _monthly_rows(rows) -> list:
             for r in rows or []]
 
 
+def horizon(lat: float, lon: float) -> dict:
+    """Terrain horizon + sun paths on the solstices (PVGIS printhorizon), for the "Outline of horizon" chart.
+
+    Azimuths are PVGIS-style: 0 = south, -90 = east, 90 = west. Heights in degrees above the flat horizon.
+    """
+    q = {"lat": round(lat, 4), "lon": round(lon, 4), "outputformat": "json"}
+    key = "pvgis/horizon/" + urllib.parse.urlencode(sorted(q.items())) + ".json"
+    if (hit := cache_get(key)):
+        return hit
+    out = (_get_json(BASE + "printhorizon?" + urllib.parse.urlencode(q)) or {}).get("outputs") or {}
+
+    def pts(rows, a_key, h_key, keep_zero):
+        res = []
+        for r in rows or []:
+            a, h = _f(r.get(a_key)), _f(r.get(h_key))
+            if a is None or h is None or (not keep_zero and h <= 0):
+                continue
+            res.append([round(a, 1), round(h, 1)])
+        return res
+
+    res = {"profile": pts(out.get("horizon_profile"), "A", "H_hor", True),
+           "summer": pts(out.get("summer_solstice"), "A_sun(s)", "H_sun(s)", False),
+           "winter": pts(out.get("winter_solstice"), "A_sun(w)", "H_sun(w)", False)}
+    if res["profile"]:
+        cache_put(key, res)
+    return res
+
+
 def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
     """p has already been validated by the handler. Returns {"tool", "inputs", ...tool-specific data}."""
     base = {"lat": round(lat, 4), "lon": round(lon, 4), "outputformat": "json"}
@@ -186,7 +214,7 @@ def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
 
     key = f"pvgis/lab/{api}/" + urllib.parse.urlencode(sorted(q.items())) + ".json"
     if (hit := cache_get(key)):
-        return hit
+        return _with_horizon(tool, lat, lon, hit)
     d = _get_json(BASE + api + "?" + urllib.parse.urlencode(q))
     inp, out = d.get("inputs") or {}, d.get("outputs") or {}
     loc = inp.get("location") or {}
@@ -231,4 +259,15 @@ def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
                    T=col("T2m"), RH=col("RH", 0), GHI=col("G(h)", 0), DNI=col("Gb(n)", 0), DHI=col("Gd(h)", 0),
                    IR=col("IR(h)", 0), WS=col("WS10m"), WD=col("WD10m", 0), SP=col("SP", 0))
     cache_put(key, res)
-    return res
+    return _with_horizon(tool, lat, lon, res)
+
+
+def _with_horizon(tool: str, lat: float, lon: float, res: dict) -> dict:
+    """Grid-connected results also carry the horizon outline (cached separately; never fails the request)."""
+    if tool != "grid" or res.get("horizon"):
+        return res
+    try:
+        return {**res, "horizon": horizon(lat, lon)}
+    except Exception as e:  # noqa: BLE001 — horizon is a nice-to-have
+        print(f"horizon fallback: {type(e).__name__}")
+        return {**res, "horizon": None}

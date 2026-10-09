@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-H9Lu+o9nooFjV7dEO9dNfPRP9QmsdOQtP/fic+3Gzug='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-RLc2TgCwpnGWJ88aTym9nNb6EmOOQ+3XwXX1O7QJyAs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home anywhere in India, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -361,6 +361,27 @@ footer a{color:inherit}
 .lacts .btn{padding:9px 14px}
 .lacts .btn:disabled{opacity:.4;cursor:not-allowed}
 .lout{display:grid;gap:12px;min-width:0}
+.field.static .sv{font-size:14px;color:var(--ink);padding:9px 12px;border-radius:12px;border:1px dashed var(--edge-soft);background:rgba(0,0,0,.15)}
+.field.static .sv small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.field input:disabled{opacity:.45}
+.pvres{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;align-items:start}
+.pvres section{min-width:0;display:grid;gap:8px;padding:12px;border-radius:14px;border:1px solid var(--edge-soft);background:rgba(0,0,0,.12)}
+.pvres h4{font:600 14px var(--f-body);color:var(--ink);margin:0}
+.pvres .pvmon{grid-column:1/-1}
+.pvsum table{width:100%;border-collapse:collapse;font-size:13px}
+.pvsum th{font:600 12px var(--f-body);text-align:left;padding:6px 8px;color:var(--ink);background:rgba(255,190,46,.14);border-radius:6px}
+.pvsum td{padding:4px 8px;color:var(--muted);vertical-align:top}
+.pvsum td+td{text-align:right;color:var(--ink);font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pvsum td.ind{padding-left:20px}
+.pvmon-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.pvmon-h .seg{min-width:210px} .pvmon-h .seg button{font-size:13px;padding:6px 10px}
+.polar{width:100%;max-width:320px;justify-self:center}
+.polar text{font:11px var(--f-body);fill:var(--muted)}
+.pvhz .legend2 span{display:inline-flex;align-items:center;gap:6px}
+.pvhz .legend2 svg{width:22px;height:8px}
+details.more{border:1px solid var(--edge-soft);border-radius:12px;padding:8px 12px}
+details.more summary{cursor:pointer;font:600 13px var(--f-body);color:var(--muted)}
+details.more[open] summary{margin-bottom:8px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .kpi{display:grid;gap:1px;padding:10px 12px;border-radius:12px;background:var(--glass-2);border:1px solid var(--edge-soft)}
 .kpi .k{font-size:12px;color:var(--muted)}.kpi .v{font:500 18px var(--f-mono);color:var(--sun-ink)}.kpi .s{font-size:11px;color:var(--muted)}
@@ -1408,12 +1429,15 @@ function fields(tool){
   const tilt=pvLive()&&pv.pvgis.tilt!=null?pv.pvgis.tilt:28;
   const ang=[["slope","Panel tilt (°)","number",tilt,0,90],["azimuth","Facing (°, 0 = south, −90 = east, 90 = west)","number",0,-180,180]];
   return {
-    grid:[["tech","PV technology","select","crystSi",[["crystSi","Crystalline silicon"],["CIS","CIS thin film"],["CdTe","CdTe thin film"],["Unknown","Unknown"]]],
-          ["kwp","Installed peak power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],
-          ["mounting","Mounting","select","free",[["free","Free-standing (on a frame)"],["building","Roof-integrated"]]],
-          ["optimize","Angles","select","both",[["both","Best tilt and facing"],["slope","Best tilt, my facing"],["none","My tilt and facing"]]],
-          ...ang, ["price","Work out the cost per unit","check",true], ["cost","System cost (₹)","number",gross,0,1e9],
-          ["interest","Loan interest (% a year)","number",0,0,30],["lifetime","Lifetime (years)","number",25,1,50]],
+    // Same inputs and defaults as the official PVGIS "Grid-connected" tool, so identical inputs give identical results.
+    grid:[["db","Solar radiation database","static","PVGIS-ERA5","The only PVGIS database that covers India (SARAH2/3 stop short of it)."],
+          ["tech","PV technology","select","crystSi",[["crystSi","Crystalline silicon"],["CIS","CIS"],["CdTe","CdTe"],["Unknown","Unknown"]]],
+          ["kwp","Installed peak PV power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],
+          ["mounting","Mounting position","select","free",[["free","Free-standing"],["building","Building integrated"]]],
+          ["slope","Slope (°)","number",35,0,90],["azimuth","Azimuth (°, 0 = south, −90 = east, 90 = west)","number",0,-180,180],
+          ["optslope","Optimize slope","check",false],["optboth","Optimize slope and azimuth","check",false],
+          ["price","PV electricity price","check",false], ["cost","PV system cost (₹)","number",gross,0,1e9],
+          ["interest","Interest (% a year)","number",0,0,30],["lifetime","Lifetime (years)","number",25,1,50]],
     tracking:[["kwp","Installed peak power (kWp)","number",kw,0.1,1000],["loss","System loss (%)","number",14,0,50],
           ["inclined","Inclined axis","check",true],["vertical","Vertical axis","check",true],["twoaxis","Two-axis","check",true]],
     offgrid:[["wp","Panel power (W)","number",Math.round(kw*1000),10,1e6],["battery_wh","Battery capacity (Wh)","number",8000,100,1e6],
@@ -1429,7 +1453,9 @@ function buildForm(){
   for(const [id,label,kind,def,a,b] of fields(labTool)){
     const wrap=document.createElement("div"); wrap.className="field"+(kind==="check"?" chk":"");
     const lid="lf-"+id;
-    if(kind==="check"){ wrap.innerHTML=`<label><input type="checkbox" id="${lid}"> <span></span></label>`; wrap.querySelector("span").textContent=label; wrap.querySelector("input").checked=!!def; }
+    if(kind==="static"){ wrap.className="field static"; wrap.innerHTML=`<span class="lbl"></span><div class="sv" id="${lid}"><span></span><small></small></div>`;
+      wrap.querySelector(".lbl").textContent=label; wrap.querySelector(".sv span").textContent=def; wrap.querySelector(".sv small").textContent=a||""; }
+    else if(kind==="check"){ wrap.innerHTML=`<label><input type="checkbox" id="${lid}"> <span></span></label>`; wrap.querySelector("span").textContent=label; wrap.querySelector("input").checked=!!def; }
     else if(kind==="select"){ wrap.innerHTML=`<label for="${lid}"></label><select id="${lid}"></select>`; wrap.querySelector("label").textContent=label;
       const s=wrap.querySelector("select"); for(const [v,t] of a){ const o=document.createElement("option"); o.value=v; o.textContent=t; s.appendChild(o); } s.value=String(def); }
     else { wrap.innerHTML=`<label for="${lid}"></label><input id="${lid}" type="number">`; wrap.querySelector("label").textContent=label;
@@ -1437,21 +1463,30 @@ function buildForm(){
     f.appendChild(wrap);
   }
   if(!fields(labTool).length){ const p=document.createElement("p"); p.className="cap"; p.textContent="The most typical month of each calendar month from 2005–2023, picked for this spot. Used for building and energy design."; f.appendChild(p); }
-  const ang=()=>{ const o=$("lf-optimize"); if(!o) return; const v=o.value; $("lf-slope").closest(".field").hidden=v!=="none"; $("lf-azimuth").closest(".field").hidden=v==="both"; };
+  const ang=()=>{ const s1=$("lf-optslope"), s2=$("lf-optboth"); if(!s1||!s2) return;
+    $("lf-slope").disabled=s1.checked||s2.checked; $("lf-azimuth").disabled=s2.checked; };
+  if($("lf-optslope")){ $("lf-optslope").addEventListener("change",()=>{ if($("lf-optslope").checked) $("lf-optboth").checked=false; ang(); });
+    $("lf-optboth").addEventListener("change",()=>{ if($("lf-optboth").checked) $("lf-optslope").checked=false; ang(); }); }
   const pr=()=>{ const c=$("lf-price"); if(!c) return; for(const k of ["cost","interest","lifetime"]) $("lf-"+k).closest(".field").hidden=!c.checked; };
-  $("lf-optimize")&&$("lf-optimize").addEventListener("change",ang); $("lf-price")&&$("lf-price").addEventListener("change",pr); ang(); pr();
+  $("lf-price")&&$("lf-price").addEventListener("change",pr); ang(); pr();
   $("l-form").querySelectorAll("select").forEach(x=>fancySelect(x));
 }
 function readForm(){
   const body={tool:labTool,lat:+here.lat.toFixed(5),lon:+here.lng.toFixed(5)};
   for(const [id,,kind,,a,b] of fields(labTool)){
-    const el=$("lf-"+id); if(!el || el.closest(".field").hidden) continue;
-    if(kind==="check"){ if(id!=="price") body[id]=el.checked; continue; }
+    const el=$("lf-"+id); if(!el || el.closest(".field").hidden || kind==="static") continue;
+    if(kind==="check"){ if(!["price","optslope","optboth"].includes(id)) body[id]=el.checked; continue; }
+    if(el.disabled) continue;
     if(kind==="select"){ body[id]= id==="month" ? +el.value : el.value; continue; }
     const v=parseFloat(el.value); if(!Number.isFinite(v)||v<a||v>b) throw new Error(`${el.closest(".field").querySelector("label").textContent}: enter a value from ${a} to ${b}.`);
     body[id]=v;
   }
-  if(labTool==="grid" && !$("lf-price").checked) delete body.cost;
+  if(labTool==="grid"){
+    if(!$("lf-price").checked){ delete body.cost; delete body.interest; delete body.lifetime; }
+    body.optimize = $("lf-optboth").checked ? "both" : $("lf-optslope").checked ? "slope" : "none";
+    if(body.slope==null) body.slope=+$("lf-slope").value||0;
+    if(body.azimuth==null) body.azimuth=+$("lf-azimuth").value||0;
+  }
   return body;
 }
 function setTab(t){
@@ -1518,13 +1553,8 @@ const faceText=az=>az==null?"—":az===0?"south":`${Math.abs(az)}° ${az<0?"east
 function renderLab(d){
   const o=$("l-out"); let h="";
   if(d.tool==="grid"){
-    const t=d.totals, m=d.mount;
-    h+=kpis([["Yearly output",`${fmt1(t.E_y)} kWh`,`±${fmt1(t.SD_y)} kWh year to year`],["Per kWp",`${fmt1(t.E_y/d.kwp)} kWh`,"a year"],
-             ["Sunlight on panels",`${fmt1(t.H_y)} kWh/m²`,"a year"],["Tilt / facing",`${fmt1(m.slope)}°`,faceText(m.azimuth)+(m.slope_optimal?" (best)":"")],
-             ...(t.lcoe!=null?[["Cost per unit",`₹${t.lcoe.toFixed(2)}`,"over the system's life"]]:[])]);
-    h+=barChart([{name:"kWh",values:d.monthly.map(r=>r.E_m),color:SUN}],MONTH_NAMES,{unit:"kWh"});
-    h+=`<div class="chips">${[["Angle",t.loss_angle],["Spectrum",t.loss_spectral],["Heat",t.loss_temp],["Total",t.loss_total]].map(([k,v])=>`<span class="chip">${k} ${v==null?"—":(v>0?"+":"")+v.toFixed(1)+"%"}</span>`).join("")}</div>`;
-    h+=table(["Month","kWh","Sunlight kWh/m²","± kWh"],d.monthly.map(r=>[MONTH_NAMES[r.month-1],fmt1(r.E_m),fmt1(r.H_m),fmt1(r.SD_m)]));
+    h+=gridResults(d);
+    h+=`<details class="more"><summary>Monthly values</summary>`+table(["Month","PV output kWh","In-plane irradiation kWh/m²","Year-to-year ± kWh"],d.monthly.map(r=>[MONTH_NAMES[r.month-1],fmt2(r.E_m),fmt2(r.H_m),fmt2(r.SD_m)]))+`</details>`;
   } else if(d.tool==="tracking"){
     const NAMES={fixed:"Fixed (best angle)",inclined_axis:"Inclined axis",vertical_axis:"Vertical axis",two_axis:"Two-axis"}, COL={fixed:SKY,inclined_axis:SUN,vertical_axis:SUN2,two_axis:MINT};
     const ks=Object.keys(d.systems); const fixedY=d.systems.fixed&&d.systems.fixed.totals.E_y;
@@ -1569,6 +1599,72 @@ function renderLab(d){
     h+=table(["Month","Year picked"],(d.months_selected||[]).map(r=>[MONTH_NAMES[(r.month||1)-1],String(r.year)]));
   }
   o.innerHTML=h;
+  if(d.tool==="grid") wireGrid(d);
+}
+
+// ---------- Grid-connected results laid out like the official PVGIS results page ----------
+const fmt2=v=>v==null?"—":(+v).toFixed(2);
+const TECH_NAMES={crystSi:"Crystalline silicon",CIS:"CIS",CdTe:"CdTe",Unknown:"Unknown"};
+function gridResults(d){
+  const t=d.totals, m=d.mount, rq=(labData&&labData.request)||{}, pct=v=>v==null?"—":(+v).toFixed(2);
+  const row=(k,v,ind)=>`<tr><td${ind?' class="ind"':""}>${k}</td><td>${v}</td></tr>`;
+  const opt=f=>f?" (opt)":"";
+  let sum=`<tr><th colspan="2">Provided inputs</th></tr>`
+    +row("Location [lat, lon]",`${(+rq.lat).toFixed(3)}, ${(+rq.lon).toFixed(3)}`)
+    +row("Horizon", d.horizon&&d.horizon.profile&&d.horizon.profile.length?"Calculated":"Calculated by PVGIS")
+    +row("Database used",escH(d.radiation_db||"PVGIS-ERA5"))
+    +row("PV technology",TECH_NAMES[rq.tech]||escH(rq.tech||"Crystalline silicon"))
+    +row("PV installed [kWp]",fmt2(d.kwp).replace(/\.00$/,""))
+    +row("System loss [%]",(+rq.loss).toString())
+    +`<tr><th colspan="2">Simulation outputs</th></tr>`
+    +row("Slope angle [°]",(m.slope??"—")+opt(m.slope_optimal))
+    +row("Azimuth angle [°]",(m.azimuth??"—")+opt(m.azimuth_optimal))
+    +row("Yearly PV energy production [kWh]",fmt2(t.E_y))
+    +row("Yearly in-plane irradiation [kWh/m²]",fmt2(t.H_y))
+    +row("Year-to-year variability [kWh]",fmt2(t.SD_y))
+    +`<tr><td colspan="2">Changes in output due to:</td></tr>`
+    +row("Angle of incidence [%]",pct(t.loss_angle),1)+row("Spectral effects [%]",pct(t.loss_spectral),1)
+    +row("Temperature and low irradiance [%]",pct(t.loss_temp),1)+row("Total loss [%]",pct(t.loss_total))
+    +(t.lcoe!=null?row("PV electricity cost [per kWh]",`₹${(+t.lcoe).toFixed(3)}`):"");
+  return `<div class="pvres">
+    <section class="pvsum"><h4>Summary</h4><table>${sum}</table></section>
+    <section class="pvhz"><h4>Outline of horizon</h4>${horizonSvg(d.horizon)}</section>
+    <section class="pvmon"><div class="pvmon-h"><h4 id="pvm-t">Monthly energy output from fix-angle PV system</h4>
+      <div class="seg" role="group" aria-label="Chart"><button type="button" id="pvm-e" aria-pressed="true">PV output</button><button type="button" id="pvm-h" aria-pressed="false">Radiation</button></div></div>
+      <div id="pvm-c"></div></section>
+  </div>`;
+}
+function wireGrid(d){
+  const show=k=>{ const E=k==="E";
+    $("pvm-t").textContent=E?"Monthly energy output from fix-angle PV system [kWh]":"Monthly in-plane irradiation for fixed angle [kWh/m²]";
+    $("pvm-c").innerHTML=barChart([{name:E?"PV energy output [kWh]":"In-plane irradiation [kWh/m²]",values:d.monthly.map(r=>E?r.E_m:r.H_m),color:E?SKY:SUN2}],MONTH_NAMES,{unit:E?"kWh":"kWh/m²"});
+    press(E?$("pvm-e"):$("pvm-h"),E?$("pvm-h"):$("pvm-e")); };
+  $("pvm-e").onclick=()=>show("E"); $("pvm-h").onclick=()=>show("H"); show("E");
+}
+function horizonSvg(hz){
+  if(!hz||!hz.profile||!hz.profile.length) return `<p class="cap">PVGIS didn't return a horizon for this spot. The simulation above still includes terrain shading.</p>`;
+  const S=300, c=S/2, R=118, rad=Math.PI/180;
+  // PVGIS azimuth: 0 = south, -90 = east, 90 = west. Drawn north-up, east on the right, like PVGIS.
+  const P=(A,h)=>{ const b=(A+180)*rad, r=R*(1-Math.max(Math.min(h,90),0)/90); return [c+r*Math.sin(b), c-r*Math.cos(b)]; };
+  const pts=a=>a.map(([A,h])=>P(A,h).map(v=>v.toFixed(1)).join(",")).join(" ");
+  const prof=[...hz.profile].sort((x,y)=>x[0]-y[0]);
+  const ring=`M${c-R},${c}a${R},${R} 0 1,0 ${2*R},0a${R},${R} 0 1,0 ${-2*R},0Z M`+prof.map(([A,h])=>P(A,h).map(v=>v.toFixed(1)).join(",")).join(" L")+"Z";
+  const bearing=A=>((A+180)%360+360)%360, DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  const dir=A=>DIRS[Math.round(bearing(A)/22.5)%16];
+  let s=`<circle cx="${c}" cy="${c}" r="${R}" fill="rgba(127,178,255,.10)" stroke="var(--edge-soft)"/>`;
+  s+=`<circle cx="${c}" cy="${c}" r="${R/2}" fill="none" stroke="var(--edge-soft)" stroke-dasharray="2 4"/>`;
+  s+=`<text x="${c}" y="${c-R/2+12}" text-anchor="middle">45</text><text x="${c}" y="${c+4}" text-anchor="middle">90</text>`;
+  s+=`<path d="${ring}" fill="rgba(255,255,255,.35)" fill-rule="evenodd" stroke="rgba(255,255,255,.55)" stroke-width="1"/>`;
+  if(hz.summer&&hz.summer.length) s+=`<polyline points="${pts(hz.summer)}" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="6 4"/>`;
+  if(hz.winter&&hz.winter.length) s+=`<polyline points="${pts(hz.winter)}" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="1.5 3"/>`;
+  for(const [A,h] of prof){ const [x,y]=P(A,h); s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="transparent"><title>Horizon ${h}° high towards ${dir(A)} (${bearing(A)}° from north)</title></circle>`; }
+  [["N",0],["NE",45],["E",90],["SE",135],["S",180],["SW",225],["W",270],["NW",315]].forEach(([l,b])=>{ const x=c+(R+16)*Math.sin(b*rad), y=c-(R+16)*Math.cos(b*rad)+4; s+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${l}</text>`; });
+  const maxH=Math.max(...prof.map(p=>p[1]));
+  return `<svg class="polar" viewBox="0 0 ${S} ${S}" role="img" aria-label="Horizon outline with the sun's path in June and December">${s}</svg>
+    <div class="legend2"><span><i style="background:rgba(255,255,255,.45)"></i>Horizon height</span>
+      <span><svg viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 4"/></svg>Sun height, June</span>
+      <span><svg viewBox="0 0 22 8"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" stroke-width="1.6" stroke-dasharray="1.5 3"/></svg>Sun height, December</span></div>
+    <p class="cap">Highest hill or terrain on the horizon here: ${maxH}°. The closer the grey band is to the centre, the more early-morning and late-evening sun it blocks.</p>`;
 }
 
 // downloads (built in the browser from the data on screen)
