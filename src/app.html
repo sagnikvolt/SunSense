@@ -1884,13 +1884,13 @@ async function locate(q){
     if(ticket===searchSeq) goTo(g,ticket);
   }catch(e){ if(ticket===searchSeq) backToSearch(String(e&&e.message||"Something went wrong. Try again.").slice(0,160)); }
 }
-function toLanding(){
-  searchSeq++; go("search"); goHome();
+function toLanding(stay){
+  searchSeq++; go("search"); if(!stay||!viewer) goHome();   // "Search again" stays put so the next flight starts from the roof
   if(!TOUCH) setTimeout(()=>{ $("where").focus(); $("where").select(); },reduce?0:500);
   else if(document.activeElement) document.activeElement.blur();
 }
-$("again").onclick=toLanding;
-$("change").onclick=toLanding;
+$("again").onclick=()=>toLanding(true);
+$("change").onclick=()=>toLanding(true);
 $("z-home").onclick=()=>{ if(["progress","found","calc"].includes(cardState)) toLanding(); else goHome(); };
 
 // ---------- GPS ----------
