@@ -2,7 +2,7 @@
 
 **Find your roof on a 3D globe and see how much rooftop solar it can hold, what it costs after the PM Surya Ghar subsidy, and when it pays for itself. Works anywhere in India.**
 
-🔗 **Live site: [sagnikvolt.github.io/SunSense](https://sagnikvolt.github.io/SunSense/)** · API on AWS Lambda + API Gateway (Mumbai, `ap-south-1`)
+🔗 **Live site: [sunsense.sagniknath.in](https://sunsense.sagniknath.in/)** (the old [sagnikvolt.github.io/SunSense](https://sagnikvolt.github.io/SunSense/) link redirects there) · API on AWS Lambda + API Gateway (Mumbai, `ap-south-1`)
 
 Built for the **WeMakeDevs × AWS Environmental Hacks** hackathon (Bharat Builds Tour, Event 02) · Track: **Waste and Energy** · 8–11 Oct 2026
 
@@ -14,23 +14,25 @@ India wants 1 crore homes on rooftop solar under PM Surya Ghar, but most househo
 
 ## What SunSense does
 
-1. **Find your roof.** Type an address and pick from live suggestions, enter a pincode or latitude/longitude, or tap *Detect my location*. The camera flies down to your house in Google's photorealistic 3D, and you can drag the pin onto the exact roof.
-2. **Enter two numbers.** Monthly units (or your bill in ₹) and free roof area, plus on-grid or off-grid.
+1. **Find your roof.** Type an address and pick from live suggestions, enter a pincode or latitude/longitude, or tap *Detect my location*. The camera flies down to your house in Google's photorealistic 3D, and you can drag the pin onto the exact roof. (Pick *Smooth* or the playful *Switch* flight from the pill under the zoom buttons.)
+2. **Enter two numbers.** Monthly units (or your bill in ₹) and free roof area, plus on-grid or off-grid. Your **electricity board is picked from the location** (33 states and UTs, tariffs from official orders).
 3. **Get a clear answer in seconds.**
    - System size, yearly generation and **kWh per kWp**
    - Gross cost, PM Surya Ghar subsidy and net cost
-   - Bill before and after, yearly savings, **payback years** and **CO₂ avoided**
+   - Bill before and after on **your state's tariff**, yearly savings, **payback years** and **CO₂ avoided**
+   - **Grid vs solar over 25 years**: money spent either way, break-even year, with a slider for how fast grid prices rise
    - A **PVGIS simulation for that exact roof**: monthly chart, best tilt and facing, loss breakdown, cost per unit (LCOE) and, for off-grid homes, battery performance
-4. **Go deeper in the Solar lab.** Seven PVGIS tools (grid-connected, tracking, off-grid, monthly radiation, daily profile, hourly series, typical year) with charts and CSV download.
+   - A **Quick estimate / PVGIS** switch with a live status line. If PVGIS can't be reached, the page says *why* (server unreachable, PVGIS down, timeout, offline…) and *what to do*, with a Retry button
+4. **Go deeper in the Solar lab.** Seven PVGIS tools (grid-connected, tracking, off-grid, monthly radiation, daily profile, hourly series, typical year) with charts and CSV/JSON download. The grid-connected tool mirrors the official PVGIS page: same inputs and defaults, the same **Summary** table, a **PV output / Radiation** chart switch and the **Outline of horizon** (terrain horizon plus June and December sun paths).
 
-**Accuracy:** on 8 Oct 2026 every Solar lab tool was checked against the official [PVGIS site](https://re.jrc.ec.europa.eu/pvg_tools/en/tools.html) with identical inputs, and the results match exactly. For example, Kolkata (22.601, 88.404), 1 kWp at 35° gives 1408.07 kWh/yr and −25.27 % total loss on both.
+**Accuracy:** checked against the official [PVGIS site](https://re.jrc.ec.europa.eu/pvg_tools/en/tools.html) with identical inputs on the live site (9 Oct 2026). Kolkata (22.602, 88.403), 1 kWp, 14 % loss, 35° slope, 0° azimuth: **1408.08 kWh/yr, 1884.09 kWh/m² in-plane, 30.88 kWh year-to-year, −2.58 / 0.60 / −11.33 / −25.27 % losses** on both. Only PVGIS-ERA5 covers India (SARAH2/3 return "out of coverage" for Kolkata, Mumbai, Delhi, Chennai and Bhuj), so that's the database used.
 
 ---
 
 ## Architecture: where AWS fits
 
 ```
- Browser (GitHub Pages)                     AWS  ·  ap-south-1 (Mumbai)
+ Browser (sunsense.sagniknath.in)           AWS  ·  ap-south-1 (Mumbai)
  ┌──────────────────────────┐   POST JSON   ┌──────────────────────────────┐
  │ 3D globe (Cesium)        │ ────────────► │ Amazon API Gateway (HTTP API)│
  │ search + calculator UI   │               │  /calculate   /pvgis         │
@@ -44,9 +46,9 @@ India wants 1 crore homes on rooftop solar under PM Surya Ghar, but most househo
                                             └───────┬──────────────┬───────┘
                                        cache hit    ▼              ▼  cache miss
                                   ┌────────────────────┐   PVGIS (EU JRC) /
-                                  │ Amazon S3 (private,│   NASA POWER APIs
-                                  │ encrypted cache)   │   → stored in S3
-                                  └────────────────────┘
+                                  │ Amazon S3 (private,│   NASA POWER APIs (PVcalc,
+                                  │ encrypted cache)   │   SHScalc, printhorizon…)
+                                  └────────────────────┘   → stored in S3
      Logs: Amazon CloudWatch (14 days) · Infrastructure as code: AWS SAM / CloudFormation (template.yaml)
 ```
 
@@ -93,7 +95,7 @@ All the maths lives in one tested Python function, `backend/calculator.py → ca
 | Field | Type | Notes |
 |---|---|---|
 | `pincode` *or* `lat` + `lon` | string (6 digits) / numbers | India only |
-| `monthly_units` *or* `monthly_bill` | number (kWh / ₹) | Bill is converted with WBSEDCL slabs |
+| `monthly_units` *or* `monthly_bill` | number (kWh / ₹) | The website converts bills with your state's tariff and sends units; a raw `monthly_bill` sent to the API is converted with WBSEDCL slabs |
 | `roof_area` | number (m²) | Usable, shade-free area |
 | `system_type` | `"on-grid"` \| `"off-grid"` | Default `"on-grid"` |
 | `detail` | bool | `true` runs the PVGIS simulation |
@@ -105,7 +107,7 @@ All the maths lives in one tested Python function, `backend/calculator.py → ca
 
 Returns `system_kw`, `yearly_generation_kwh`, `cost_before_subsidy`, `subsidy`, `cost_after_subsidy`, `monthly_bill_before/after`, `yearly_savings`, `payback_years`, `co2_saved_kg_per_year`, `assumptions`, and a `pvgis` block (monthly kWh, tilt/azimuth, losses, LCOE; `offgrid` battery stats when relevant).
 
-`POST /pvgis` takes `{ "tool": "grid" | "tracking" | "offgrid" | "monthly" | "daily" | "hourly" | "tmy", "lat", "lon", … }` and returns the normalised PVGIS output for the Solar lab.
+`POST /pvgis` takes `{ "tool": "grid" | "tracking" | "offgrid" | "monthly" | "daily" | "hourly" | "tmy", "lat", "lon", … }` and returns the normalised PVGIS output for the Solar lab. For `grid` it accepts `tech`, `kwp`, `loss`, `mounting`, `slope`, `azimuth`, `optimize` (`none` | `slope` | `both`) and optional `cost`/`interest`/`lifetime`, and also returns `horizon` (terrain profile and solstice sun paths from PVGIS `printhorizon`).
 
 ---
 
@@ -165,7 +167,9 @@ git clone https://github.com/sagnikvolt/SunSense && cd SunSense && bash deploy.s
 
 `deploy.sh` validates and deploys `template.yaml` with the SAM CLI, prints the `ApiUrl` and runs a smoke test. Put that URL in `LIVE_API` in `src/app.html` and rebuild `index.html`.
 
-*The live stack was created on 8 Oct 2026 through the CloudFormation console from the same template, with the code zip in a private S3 bucket, because CloudShell was still locked on the brand-new account.*
+*The live stack was created on 8 Oct 2026 through the CloudFormation console from the same template, with the code zip in a private S3 bucket, because CloudShell was still locked on the brand-new account. Later backend changes (e.g. the horizon outline on 9 Oct) were deployed by uploading the same `backend/` files as a zip in the Lambda console.*
+
+**Domain:** `sunsense.sagniknath.in` is a Cloudflare DNS (DNS-only) CNAME to GitHub Pages, with HTTPS enforced. The API's CORS allow-list contains this domain, the old GitHub Pages address and `localhost:8000`.
 
 ---
 
