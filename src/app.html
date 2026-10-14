@@ -155,7 +155,7 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .sugg .s-msg:hover{background:none}
 .sugg-foot{margin:2px 10px 2px;font-size:11px;color:var(--faint)}
 .sugg-foot a{color:inherit}
-.coord-toggle{justify-self:start;background:none;border:0;color:var(--faint);font:500 13px var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:2px 10px 4px}
+.coord-toggle{justify-self:start;background:none;border:0;color:rgba(238,243,255,.82);font:500 13px var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:10px;min-height:40px}
 .coord-toggle:hover{color:var(--ink)}
 .coords{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:end;padding:0 2px 2px}
 .coords[hidden]{display:none}
@@ -502,7 +502,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
 </div>
 <p class="copy">© 2026 Sagnik Kumar Nath</p>
 
-<section class="card glass" id="card" data-state="search" aria-live="polite">
+<section class="card glass" id="card" role="main" data-state="search" aria-live="polite">
 
   <!-- 1. search -->
   <div class="view v-search on" id="v-search">
@@ -579,7 +579,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
             <h2>Your home</h2>
             <div class="field">
               <label for="state">Electricity board</label>
-              <select id="state" aria-describedby="state-h"><option value="WB">West Bengal · WBSEDCL</option></select>
+              <select id="state" aria-label="Electricity board" aria-describedby="state-h"><option value="WB">West Bengal · WBSEDCL</option></select>
               <span class="hint" id="state-h"></span>
               <div class="unit" id="rate-w" hidden><input id="rate" type="number" min="0.5" max="30" step="0.05" value="7" aria-label="Your electricity rate per unit"><span>₹ / unit</span></div>
             </div>
@@ -656,7 +656,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
                 <div class="field"><div class="psh"><label for="pv-tilt">Panel tilt</label><output id="pv-tilt-o" for="pv-tilt">28°</output></div>
                   <input id="pv-tilt" type="range" min="0" max="45" step="1" value="28"></div>
                 <div class="field"><label for="pv-face">Facing</label>
-                  <select id="pv-face"><option value="0">South</option><option value="-45">South-east</option><option value="45">South-west</option><option value="-90">East</option><option value="90">West</option></select></div>
+                  <select id="pv-face" aria-label="Panels facing"><option value="0">South</option><option value="-45">South-east</option><option value="45">South-west</option><option value="-90">East</option><option value="90">West</option></select></div>
               </div>
               <button type="button" class="btn ghost" id="pv-best" hidden>Use the best angle</button>
               <div class="chips" id="pv-loss"></div>
@@ -931,7 +931,7 @@ function fancySelect(sel,opts={}){
   sel.parentNode.insertBefore(wrap,sel); wrap.append(btn,sel);
   const lab=sel.id&&document.querySelector(`label[for="${sel.id}"]`); if(lab){ lab.htmlFor=btn.id; btn.setAttribute("aria-label",lab.textContent); }
   const pop=document.createElement("div"); pop.className="fs-pop"; pop.hidden=true;
-  const q=opts.search?Object.assign(document.createElement("input"),{type:"search",className:"fs-q",placeholder:opts.search,autocomplete:"off",spellcheck:false}):null;
+  const q=opts.search?Object.assign(document.createElement("input"),{type:"search",className:"fs-q",placeholder:opts.search,ariaLabel:opts.search,autocomplete:"off",spellcheck:false}):null;
   const ul=document.createElement("ul"); ul.className="fs-list"; ul.setAttribute("role","listbox"); ul.id="fsl-"+id;
   if(q){ q.setAttribute("aria-controls",ul.id); pop.append(q); } pop.append(ul); document.body.append(pop);
   let items=[], act=-1;
