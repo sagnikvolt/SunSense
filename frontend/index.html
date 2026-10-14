@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-8/hX8QwDucBADWQH0qA7xfZgR56u2mp9x+GMmHVjVEk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-eval' 'wasm-unsafe-eval' 'sha256-N6Q1fzKM4brb06cVkMkApseHAE5Mwqar6bQ6RD5LiEQ=' 'sha256-JvDMuGBfmPwj/qGXdsfAfU2xF3WzOHT3TaqytN2Vx+8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://api.cesium.com https://*.cesium.com https://tile.googleapis.com https://*.googleapis.com https://*.execute-api.ap-south-1.amazonaws.com https://photon.komoot.io; worker-src 'self' blob: https://cdn.jsdelivr.net; child-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="SunSense: how much rooftop solar fits your home anywhere in India, what it costs after the PM Surya Ghar subsidy, and when it pays for itself.">
 <meta name="theme-color" content="#02040b">
@@ -195,7 +195,7 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .tools{display:flex;gap:6px}
 .tool{width:36px;height:36px;border-radius:12px;border:1px solid var(--edge-soft);background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;display:grid;place-items:center}
 .tool svg{width:17px;height:17px}
-.scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;padding:4px 18px 18px;display:grid;gap:14px;align-content:start}
+.scroll{overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent;padding:4px 18px 18px;display:grid;gap:14px;align-content:start}
 .here{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:12px 14px}
 .here .place{font:600 15px var(--f-body)}
 .here .acts{grid-column:2;grid-row:1/3;flex-wrap:nowrap;gap:6px}
@@ -362,7 +362,7 @@ footer a{color:inherit}
 .lhead{--gc:#f7883c;background:linear-gradient(90deg,var(--gc),color-mix(in srgb,var(--gc) 70%,#000));padding:12px 16px}
 .lhead[data-group=data]{--gc:#9b74e0}.lhead[data-group=tmy]{--gc:#3fbf74}
 .lhead h3{margin:0;font:700 15px var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:#fff}
-.lbody{overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 18px;display:grid;gap:12px;align-content:start;scrollbar-width:thin}
+.lbody{overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;padding:14px 16px 18px;display:grid;gap:12px;align-content:start;scrollbar-width:thin}
 .lform{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;align-items:end}
 .lform .field{gap:4px}
 .lform label{font-size:13px}
@@ -408,9 +408,24 @@ h4.sub{margin:4px 0 0;font:500 11px var(--f-mono);letter-spacing:.08em;text-tran
 /* ---------- map controls + help ---------- */
 .zoomctl{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:grid;gap:8px;z-index:4}
 .zoomctl button{--tint:rgba(6,12,28,.45);width:42px;height:42px;border-radius:14px;color:var(--ink);font:500 18px var(--f-mono);cursor:pointer}
-.zoomctl .flypill{--tint:rgba(6,12,28,.45);position:absolute;right:0;top:calc(100% + 10px);display:flex;gap:2px;padding:3px;border-radius:999px;white-space:nowrap}
-.zoomctl .flypill button{width:auto;height:auto;padding:4px 10px;border-radius:999px;font:600 11.5px var(--f-body);color:var(--muted);background:transparent;border:0;letter-spacing:.02em}
-.zoomctl .flypill button[aria-pressed=true]{background:rgba(255,190,46,.9);color:#1a1200}
+.zoomctl{position:fixed}
+.zoomctl > button{display:grid;place-items:center}
+#z-set[aria-expanded=true]{color:#ffbe2e}
+.setpop{--tint:rgba(8,14,30,.86);position:absolute;right:calc(100% + 10px);bottom:0;width:236px;border-radius:18px;padding:12px 14px 6px;
+  display:grid;font:400 13px/1.3 var(--f-body);color:var(--ink)}
+.setpop[hidden]{display:none}
+.sp-h{font:600 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.sp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--edge-soft);cursor:pointer}
+.sp-row:first-of-type{border-top:0}
+.sp-row:has(.sp-seg){flex-direction:column;align-items:stretch;gap:7px;cursor:default}
+.sp-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.07)}
+.zoomctl .sp-seg button{flex:1;width:auto;height:auto;padding:5px 10px;border-radius:999px;font:600 12px var(--f-body);color:var(--muted);background:transparent;border:0;cursor:pointer}
+.zoomctl .sp-seg button[aria-pressed=true]{background:rgba(255,190,46,.92);color:#1a1200}
+.sp-tg{appearance:none;-webkit-appearance:none;flex:none;width:38px;height:22px;margin:0;border-radius:99px;background:rgba(255,255,255,.18);position:relative;cursor:pointer;transition:background .2s}
+.sp-tg::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
+.sp-tg:checked{background:rgba(255,190,46,.92)}
+.sp-tg:checked::after{transform:translateX(16px)}
+.sp-tg:focus-visible{outline:2px solid #ffbe2e;outline-offset:2px}
 .help{--tint:rgba(6,12,28,.5);position:fixed;z-index:2;bottom:14px;left:calc(50% + var(--gx));transform:translateX(-50%);
   width:max-content;max-width:min(760px,calc(100vw - 40px));border-radius:22px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:12px;
   font:400 13px/1.35 var(--f-body);color:var(--muted);transition:left 1.2s var(--ease)}
@@ -435,7 +450,8 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
   .loading{top:34vh}
   #logo .sub{font-size:15px}
   .zoomctl{top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;transform:none}
-  .zoomctl button{width:38px;height:38px}
+  .zoomctl > button{width:38px;height:38px}
+  .setpop{bottom:auto;top:0}
   body.st-expanded .zoomctl,body.st-lab .zoomctl{display:none}
   #credits{max-width:none;right:64px;left:12px;text-align:left}
   .bar{grid-template-columns:minmax(0,1fr) auto}
@@ -474,10 +490,16 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
   <button type="button" class="glass" id="z-in" aria-label="Zoom in">+</button>
   <button type="button" class="glass" id="z-out" aria-label="Zoom out">−</button>
   <button type="button" class="glass" id="z-home" aria-label="Back to all of India">⌂</button>
-  <button type="button" class="glass" id="z-sfx" hidden aria-pressed="true" aria-label="Flight sound effects" title="Flight sound effects">🔊</button>
-  <div class="flypill glass" role="group" aria-label="Flight animation">
-    <button type="button" id="fly-smooth" aria-pressed="true" title="Smooth fly-in">Smooth</button>
-    <button type="button" id="fly-switch" aria-pressed="false" title="Shoot up, slide across, drop down">Switch</button>
+  <button type="button" class="glass" id="z-set" aria-label="Settings" aria-expanded="false" aria-controls="setpop" title="Settings"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  <div class="setpop glass" id="setpop" hidden role="dialog" aria-label="Settings">
+    <div class="sp-h">Settings</div>
+    <div class="sp-row"><span class="sp-l">Flight animation</span>
+      <div class="sp-seg" role="group" aria-label="Flight animation">
+        <button type="button" id="fly-smooth" aria-pressed="true" title="Smooth fly-in">Smooth</button>
+        <button type="button" id="fly-switch" aria-pressed="false" title="Shoot up, slide across, drop down">Switch</button>
+      </div></div>
+    <label class="sp-row" for="set-sfx"><span class="sp-l">Sound effects</span><input type="checkbox" class="sp-tg" id="set-sfx" role="switch"></label>
+    <label class="sp-row" for="set-help"><span class="sp-l">Map controls help</span><input type="checkbox" class="sp-tg" id="set-help" role="switch"></label>
   </div>
 </div>
 
@@ -1147,12 +1169,27 @@ function stopOrbit(){
 let flightTok=0, sfxOn=true, actx=null, flyMode="smooth";
 try{ sfxOn=localStorage.getItem("ss-sfx")!=="0"; flyMode=localStorage.getItem("ss-fly2")==="switch"?"switch":"smooth"; }catch{}
 function setFlyMode(m){ flyMode=m; press(m==="switch"?$("fly-switch"):$("fly-smooth"), m==="switch"?$("fly-smooth"):$("fly-switch"));
-  $("z-sfx").hidden=m!=="switch"; try{ localStorage.setItem("ss-fly2",m); }catch{} }
+  try{ localStorage.setItem("ss-fly2",m); }catch{} }
+let sfxNodes=[];
+function stopSfx(){ const t=actx?actx.currentTime:0; sfxNodes.forEach(([src,g])=>{ try{ g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0,t,.08); src.stop(t+.4); }catch{} }); sfxNodes=[]; }
 function sfx(kind){
   if(!sfxOn) return;
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume();
     const t=actx.currentTime;
+    if(kind==="glide"){   // smooth fly-in: soft wind that rises, then eases down as the camera settles
+      const len=FLIGHT, buf=actx.createBuffer(2,Math.floor(actx.sampleRate*len),actx.sampleRate);
+      for(let c=0;c<2;c++){ const d=buf.getChannelData(c); let b=0; for(let i=0;i<d.length;i++){ b=.985*b+.015*(Math.random()*2-1); d[i]=b*6; } }
+      const src=actx.createBufferSource(); src.buffer=buf;
+      const f=actx.createBiquadFilter(); f.type="lowpass"; f.Q.value=.7;
+      f.frequency.setValueAtTime(250,t); f.frequency.exponentialRampToValueAtTime(1300,t+len*.4); f.frequency.exponentialRampToValueAtTime(180,t+len);
+      const g=actx.createGain(); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.16,t+len*.35);
+      g.gain.exponentialRampToValueAtTime(.05,t+len*.8); g.gain.exponentialRampToValueAtTime(.0001,t+len);
+      src.connect(f).connect(g).connect(actx.destination); src.start(t); sfxNodes.push([src,g]); return; }
+    if(kind==="settle"){  // gentle two-note chime when a smooth flight lands
+      [[523.25,0],[783.99,.12]].forEach(([fq,dt])=>{ const o=actx.createOscillator(), g=actx.createGain(); o.type="sine"; o.frequency.value=fq;
+        g.gain.setValueAtTime(.0001,t+dt); g.gain.exponentialRampToValueAtTime(.07,t+dt+.03); g.gain.exponentialRampToValueAtTime(.0001,t+dt+1.1);
+        o.connect(g).connect(actx.destination); o.start(t+dt); o.stop(t+dt+1.2); }); return; }
     if(kind==="thud"){ const o=actx.createOscillator(), g=actx.createGain(); o.type="sine";
       o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(42,t+.25);
       g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.001,t+.35); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.4); return; }
@@ -1189,15 +1226,19 @@ async function switchFlight(lat,lng,land){
   document.body.classList.remove("switching");
   land(1.2,LOW);
 }
-$("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
 $("fly-smooth").onclick=()=>setFlyMode("smooth"); $("fly-switch").onclick=()=>setFlyMode("switch"); setFlyMode(flyMode);
-$("z-sfx").onclick=()=>{ sfxOn=!sfxOn; $("z-sfx").setAttribute("aria-pressed",String(sfxOn)); $("z-sfx").textContent=sfxOn?"🔊":"🔇";
-  try{ localStorage.setItem("ss-sfx",sfxOn?"1":"0"); }catch{} if(sfxOn) sfx("thud"); };
+$("set-sfx").checked=sfxOn;
+$("set-sfx").onchange=()=>{ sfxOn=$("set-sfx").checked; try{ localStorage.setItem("ss-sfx",sfxOn?"1":"0"); }catch{} if(sfxOn) sfx("settle"); else stopSfx(); };
+// settings popover under + / − / home
+function setPop(open){ $("setpop").hidden=!open; $("z-set").setAttribute("aria-expanded",String(open)); }
+$("z-set").onclick=e=>{ e.stopPropagation(); setPop($("setpop").hidden); };
+document.addEventListener("pointerdown",e=>{ if(!$("setpop").hidden && !e.target.closest("#setpop,#z-set")) setPop(false); });
+addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("setpop").hidden){ setPop(false); $("z-set").focus({preventScroll:true}); } });
 
 const FLIGHT=6;    // seconds for either style (switch: up, across, down, settle)
 function flyTo(lat,lng,tag,onArrive){
   if(!viewer) return;
-  flightTok++; viewer.camera.cancelFlight(); document.body.classList.remove("switching");
+  flightTok++; viewer.camera.cancelFlight(); document.body.classList.remove("switching"); stopSfx();
   stopOrbit(); spinning=false;
   viewer.entities.removeAll();
   const ground=Cesium.Cartesian3.fromDegrees(lng,lat,0);
@@ -1216,16 +1257,17 @@ function flyTo(lat,lng,tag,onArrive){
     orientation:{heading:0,pitch:Cesium.Math.toRadians(PITCH),roll:0},
     duration:dur, maximumHeight:maxH||2.2e6, easingFunction:maxH?Cesium.EasingFunction.QUADRATIC_OUT:Cesium.EasingFunction.QUINTIC_IN_OUT,
     complete:()=>{ if(tok!==flightTok) return;
+      if(!maxH && dur>=FLIGHT) sfx("settle");
       if(onArrive) onArrive();
       viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(ground)])
         .then(([p])=>p||ground).catch(()=>ground)
         .then(t=>{ pin.position=t; orbit={target:t,heading:0,auto:true}; aimOrbit(viewer); });
     }});
-  if(reduce) land(0); else if(flyMode==="smooth") land(FLIGHT); else switchFlight(lat,lng,land).catch(()=>{ if(tok===flightTok){ document.body.classList.remove("switching"); land(1.4); } });
+  if(reduce) land(0); else if(flyMode==="smooth"){ sfx("glide"); land(FLIGHT); } else switchFlight(lat,lng,land).catch(()=>{ if(tok===flightTok){ document.body.classList.remove("switching"); land(1.4); } });
 }
 
 function goHome(){
-  flightTok++; if(viewer) viewer.camera.cancelFlight(); document.body.classList.remove("switching");
+  flightTok++; if(viewer) viewer.camera.cancelFlight(); document.body.classList.remove("switching"); stopSfx();
   stopOrbit(); spinning=!reduce;
   if(viewer) viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(INDIA.lng,INDIA.lat,INDIA.h),duration:reduce?0:3});
 }
@@ -1336,12 +1378,13 @@ const coarse=matchMedia("(pointer: coarse)").matches;
 $("help-text").innerHTML = coarse
   ? '<span class="hi"><b>Drag</b> move</span><span class="hi"><b>Pinch</b> zoom</span><span class="hi"><b>Two fingers</b> tilt &amp; turn</span><span class="hi"><b>Double-tap</b> zoom in</span>'
   : '<span class="hi"><b>Drag</b> move</span><span class="hi"><b>Scroll</b> zoom</span><span class="hi"><b>Shift + drag</b> tilt</span><span class="hi"><b>Double-click</b> zoom in</span><span class="hi"><b>← →</b> turn</span><span class="hi"><b>R</b> recentre</span>';
-function showHelp(on){
-  $("help").hidden=!on; $("help-open").hidden=on;
-  try{ localStorage.setItem("ss-help",on?"1":"0"); }catch{}
+function showHelp(on,off){      // on: bar shown · closed: small "? Map controls" pill · off (settings): neither
+  $("help").hidden=!on||off; $("help-open").hidden=on||off; $("set-help").checked=!off;
+  try{ localStorage.setItem("ss-help",off?"off":on?"1":"0"); }catch{}
 }
 let helpPref="1"; try{ helpPref=localStorage.getItem("ss-help")??"1"; }catch{}
-showHelp(helpPref!=="0");
+showHelp(helpPref==="1",helpPref==="off");
+$("set-help").onchange=()=>showHelp($("set-help").checked,!$("set-help").checked);
 $("help-x").onclick=()=>showHelp(false);
 $("help-open").onclick=()=>showHelp(true);
 
@@ -1984,7 +2027,7 @@ $("calc-btn").onclick=async()=>{
   if(sim){ $("p-title").textContent="Finishing the PVGIS simulation…"; await Promise.race([sim,wait(20000)]); if(cardState!=="calc") return; }
   $("r-scroll").scrollTop=0;
   render();
-  go("results"); reveal(); countUp(pvLive()?pv.payback_years:r.payback);
+  go("results"); reveal(); countUp((window.__lastR||r).payback);
 };
 
 // ---------- expand / minimise ----------
