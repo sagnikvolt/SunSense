@@ -75,6 +75,8 @@ body.fly .loading{left:50%}
 #credits{position:fixed;right:14px;top:10px;z-index:3;font:400 10px/1.35 var(--f-body);color:var(--faint);max-width:min(560px,60vw);text-align:right}
 #credits *{color:inherit!important;font-size:10px!important}
 #credits img{max-height:16px;vertical-align:middle}
+#credits img[src$="ion-credit.png"]{width:79px;height:16px}
+#credits img[src$="google-credit.png"]{width:87px;height:16px}
 
 /* ---------- liquid glass ---------- */
 .glass{position:relative;isolation:isolate;
@@ -468,7 +470,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
 </style>
 
 <div class="sky" aria-hidden="true"><div class="stars s1"></div><div class="stars s2"></div></div>
-<div class="sky" style="background:none"><div id="globe" aria-label="3D Earth"></div><div id="sw-fx" aria-hidden="true"></div></div>
+<div class="sky" style="background:none"><div id="globe" role="region" aria-label="3D Earth"></div><div id="sw-fx" aria-hidden="true"></div></div>
 <div class="cross" id="cross" aria-hidden="true"><i></i></div>
 <div class="loading" id="g-loading">Loading 3D Earth…</div>
 <div id="credits"></div>
@@ -670,7 +672,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
           </div>
           <div class="box glass-2 rv" id="map-box">
             <div class="pvhead"><h2>Solar potential across India</h2><span class="src">PVGIS 5.3 · 2005–2023</span></div>
-            <div class="smap"><img src="assets/solar_potential_india.png" alt="Map of yearly solar output per kW of panels across India and neighbouring countries" width="1180" height="1260" loading="lazy" decoding="async"><span class="spin" id="map-pin" hidden></span></div>
+            <div class="smap"><img src="assets/solar_potential_india.webp" alt="Map of yearly solar output per kW of panels across India and neighbouring countries" width="1180" height="1260" loading="lazy" decoding="async"><span class="spin" id="map-pin" hidden></span></div>
             <div class="mlegend" aria-hidden="true"><span class="bar"></span><span class="ticks"><span>1,200</span><span>1,600</span><span>1,950+</span></span></div>
             <p class="cap" id="map-cap">kWh produced per kW of panels a year, at the best fixed angle.</p>
             <p class="src2">PVGIS © European Union, 2001–2026 · CC BY 4.0</p>
@@ -745,6 +747,54 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
   </div>
 </section>
 
+<script>
+// Runs before Cesium.js (which blocks the main script below while it downloads), so the card and logo
+// are painted in their final place and don't jump when the main script starts: no layout shift.
+const $=id=>document.getElementById(id);
+const narrow=()=>innerWidth<=860;
+let cardState="search";
+
+// ---------- the shape-shifting card ----------
+const card=$("card"), logoEl=$("logo");
+const BODY_MODE={search:"landing",progress:"fly",found:"fly",calc:"fly",results:"plan",expanded:"plan",mini:"fly",lab:"plan"};
+const VIEW={search:"v-search",progress:"v-progress",found:"v-found",calc:"v-progress",results:"v-results",expanded:"v-results",mini:"v-mini",lab:"v-lab"};
+const STATES=Object.keys(VIEW);
+let lastBig="results";
+
+function measure(v,w){            // natural height of a view at a given card width
+  const s=v.style, ow=s.width, oh=s.height;
+  s.width=w+"px"; s.height="auto";
+  const h=v.offsetHeight; s.width=ow; s.height=oh;
+  return Math.ceil(h)+2;           // + border
+}
+function geom(st){
+  const W=innerWidth, H=innerHeight, v=$(VIEW[st]);
+  if(narrow()){
+    const w=W-24, l=12;
+    if(st==="results") { const h=Math.round(H*.58); return {l,t:H-12-h,w,h}; }
+    if(st==="expanded"||st==="lab") return {l,t:12,w,h:H-24};
+    const h=measure(v,w); return {l,t:H-14-h,w,h};
+  }
+  const lx=Math.round(Math.min(Math.max(20,W*.06),104));
+  if(st==="search"){ const w=Math.min(560,Math.round(W*.42)), h=measure(v,w);
+    const lh=logoEl.offsetHeight, block=lh+24+h, top=Math.round((H-block)/2)+lh+24; return {l:lx,t:top,w,h}; }
+  if(st==="results")  return {l:20,t:20,w:Math.min(468,Math.round(W*.42)),h:H-40};
+  if(st==="expanded"||st==="lab") return {l:20,t:20,w:Math.min(1060,W-100),h:H-40};
+  if(st==="mini"){ const w=Math.min(400,W-40), h=measure(v,w); return {l:20,t:H-20-h,w,h}; }
+  const w=Math.min(440,Math.round(W*.4)), h=measure(v,w);           // progress / found / calc
+  return {l:lx,t:Math.round((H-h)/2),w,h};
+}
+function place(instant){
+  const g=geom(cardState);
+  if(instant) card.style.transition="none";
+  Object.assign(card.style,{left:g.l+"px",top:g.t+"px",width:g.w+"px",height:g.h+"px"});
+  if(cardState==="search"){ logoEl.style.left=g.l+"px"; logoEl.style.top=(g.t-logoEl.offsetHeight-24)+"px"; logoEl.style.maxWidth=Math.max(g.w,320)+"px"; }
+  if(instant){ void card.offsetWidth; card.style.transition=""; }
+}
+
+document.body.classList.add("st-search","landing");
+place(true);
+</script>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/";</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
@@ -810,7 +860,6 @@ function calculate(units,roof,psh,type){
 }
 
 const num=(id,max)=>{ const v=parseFloat($(id).value); return Number.isFinite(v) ? Math.min(Math.max(v,0),max) : 0; };
-const $=id=>document.getElementById(id);
 const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
 const fmt=n=>Math.round(n).toLocaleString("en-IN");
 let byBill=false, type="on-grid";
@@ -1045,10 +1094,10 @@ fancySelect($("pv-face"));
 fetch("assets/tariffs.json").then(r=>r.ok?r.json():null).then(j=>{ if(j&&j.states){ TARIFFS=j; fillStates(); render(); } }).catch(()=>{});
 
 // ---------- Location: pincode table + address search ----------
-let PINS=null;
-const pinsReady=fetch("assets/pincodes.csv").then(r=>r.text()).then(t=>{
+let PINS=null, pinsP=null;
+const loadPins=()=>pinsP||(pinsP=fetch("assets/pincodes.csv").then(r=>r.text()).then(t=>{   // fetched on first use, not at startup
   PINS=new Map(); for(const line of t.split("\n").slice(1)){ const [p,la,lo]=line.split(","); if(p) PINS.set(p,[+la,+lo]); }
-}).catch(()=>{ PINS=new Map(); });
+}).catch(()=>{ PINS=new Map(); }));
 
 const geoCache=new Map(), geoTimes=[];
 const inIndia=(la,lo)=>Number.isFinite(la)&&Number.isFinite(lo)&&la>6&&la<37.5&&lo>68&&lo<97.5;
@@ -1083,7 +1132,7 @@ async function geocodeRaw(q,isPin){
   }
   // Backup: bundled pincode table (works offline and when the 3D globe can't load)
   if(isPin){
-    await pinsReady; const hit=PINS.get(q);
+    await loadPins(); const hit=PINS.get(q);
     if(!hit) throw new Error(`Pincode ${q} isn't in our list. Try a nearby pincode or an address.`);
     return {lat:hit[0],lng:hit[1],label:`Pincode ${q}`,pincode:q};
   }
@@ -1092,12 +1141,11 @@ async function geocodeRaw(q,isPin){
 
 // ---------- 3D Earth: CesiumJS + Google Photorealistic 3D Tiles ----------
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-const narrow=()=>innerWidth<=860;
 // Start view: close in over the Arabian Sea so Earth fills the right side, its edge sweeping past the screen
 const INDIA={get lat(){ return innerWidth<=860 ? 20.5 : 22; }, get lng(){ return innerWidth<=860 ? 80 : 68; },
              get h(){ return innerWidth<=860 ? 30e6 : 17.5e6; }};
 const PITCH=-38, RANGE=1140;              // final view: 700 m up, 38° down
-let viewer=null, here=null, spinning=!reduce, orbit=null, searchSeq=0, pinEntity=null, pinning=false, pinMoved=false, cardState="search";
+let viewer=null, here=null, spinning=!reduce, orbit=null, searchSeq=0, pinEntity=null, pinning=false, pinMoved=false;
 const el=$("globe");
 
 const cesiumReady=(async()=>{
@@ -1799,43 +1847,6 @@ function openLab(){
 $("lab-btn").onclick=openLab;
 $("lab-back").onclick=()=>go(lastBig);
 
-// ---------- the shape-shifting card ----------
-const card=$("card"), logoEl=$("logo");
-const BODY_MODE={search:"landing",progress:"fly",found:"fly",calc:"fly",results:"plan",expanded:"plan",mini:"fly",lab:"plan"};
-const VIEW={search:"v-search",progress:"v-progress",found:"v-found",calc:"v-progress",results:"v-results",expanded:"v-results",mini:"v-mini",lab:"v-lab"};
-const STATES=Object.keys(VIEW);
-let lastBig="results";
-
-function measure(v,w){            // natural height of a view at a given card width
-  const s=v.style, ow=s.width, oh=s.height;
-  s.width=w+"px"; s.height="auto";
-  const h=v.offsetHeight; s.width=ow; s.height=oh;
-  return Math.ceil(h)+2;           // + border
-}
-function geom(st){
-  const W=innerWidth, H=innerHeight, v=$(VIEW[st]);
-  if(narrow()){
-    const w=W-24, l=12;
-    if(st==="results") { const h=Math.round(H*.58); return {l,t:H-12-h,w,h}; }
-    if(st==="expanded"||st==="lab") return {l,t:12,w,h:H-24};
-    const h=measure(v,w); return {l,t:H-14-h,w,h};
-  }
-  const lx=Math.round(Math.min(Math.max(20,W*.06),104));
-  if(st==="search"){ const w=Math.min(560,Math.round(W*.42)), h=measure(v,w);
-    const lh=logoEl.offsetHeight, block=lh+24+h, top=Math.round((H-block)/2)+lh+24; return {l:lx,t:top,w,h}; }
-  if(st==="results")  return {l:20,t:20,w:Math.min(468,Math.round(W*.42)),h:H-40};
-  if(st==="expanded"||st==="lab") return {l:20,t:20,w:Math.min(1060,W-100),h:H-40};
-  if(st==="mini"){ const w=Math.min(400,W-40), h=measure(v,w); return {l:20,t:H-20-h,w,h}; }
-  const w=Math.min(440,Math.round(W*.4)), h=measure(v,w);           // progress / found / calc
-  return {l:lx,t:Math.round((H-h)/2),w,h};
-}
-function place(instant){
-  const g=geom(cardState);
-  if(instant) card.style.transition="none";
-  Object.assign(card.style,{left:g.l+"px",top:g.t+"px",width:g.w+"px",height:g.h+"px"});
-  if(cardState==="search"){ logoEl.style.left=g.l+"px"; logoEl.style.top=(g.t-logoEl.offsetHeight-24)+"px"; logoEl.style.maxWidth=Math.max(g.w,320)+"px"; }
-  if(instant){ void card.offsetWidth; card.style.transition=""; }
-}
 function go(st){
   cardState=st;
   document.body.classList.remove(...STATES.map(s=>"st-"+s),"landing","fly","plan");
@@ -1927,7 +1938,7 @@ async function flyToCoords(la,lo){
   if(!inIndia(la,lo)){ $("status").textContent="Those coordinates are outside India. SunSense covers India only (latitude 6 to 37.5, longitude 68 to 97.5)."; refit(); return; }
   $("status").textContent="";
   const ticket=++searchSeq;
-  await pinsReady;
+  await loadPins();
   const pc=nearestPincode(la,lo), ll=`${la.toFixed(4)}, ${lo.toFixed(4)}`;
   goTo({lat:la,lng:lo,label:pc?`${ll} · near ${pc}`:ll,pincode:pc,tag:"Pin"},ticket);
 }
@@ -1968,7 +1979,7 @@ $("gps").onclick=()=>{
   navigator.geolocation.getCurrentPosition(async pos=>{
     if(ticket!==searchSeq) return;
     const {latitude:lat,longitude:lng,accuracy}=pos.coords;
-    await pinsReady;
+    await loadPins();
     const pc=nearestPincode(lat,lng);
     $("where").value=pc||"";
     goTo({lat,lng,label:pc?`Your location · near ${pc}`:"Your location",pincode:pc,tag:"You",accuracy,gps:true},ticket);
@@ -2082,7 +2093,7 @@ async function pickSugg(i){
   if(it.xy) return flyToCoords(it.lat,it.lng);
   whereEl.value=it.name+(it.sub?`, ${it.sub}`:"");
   $("status").textContent="";
-  const ticket=++searchSeq; await pinsReady;
+  const ticket=++searchSeq; await loadPins();
   const pc=it.pincode||nearestPincode(it.lat,it.lng);
   goTo({lat:it.lat,lng:it.lng,label:[it.name,...(it.sub||"").split(", ").slice(-3,-1)].filter(Boolean).join(", "),pincode:pc,state:it.state,tag:"Pin"},ticket);
 }
@@ -2093,7 +2104,7 @@ async function suggest(){
   if(c){ return renderSugg(q, inIndia(c[0],c[1])?[{xy:true,name:`${c[0].toFixed(4)}, ${c[1].toFixed(4)}`,sub:"Go to these coordinates",lat:c[0],lng:c[1]}]:[], inIndia(c[0],c[1])?"":"Those coordinates are outside India."); }
   if(q.length<3){ suggOpen(false); return; }
   const local=[];
-  if(/^\d{6}$/.test(q)){ await pinsReady; const h=PINS.get(q); if(h) local.push({name:`Pincode ${q}`,sub:"India Post pincode",lat:h[0],lng:h[1],pincode:q}); }
+  if(/^\d{6}$/.test(q)){ await loadPins(); const h=PINS.get(q); if(h) local.push({name:`Pincode ${q}`,sub:"India Post pincode",lat:h[0],lng:h[1],pincode:q}); }
   const key=q.toLowerCase();
   if(suggCache.has(key)) return renderSugg(q,[...local,...suggCache.get(key)]);
   if(local.length) renderSugg(q,local,"Searching places…"); else if($("sugg-box").hidden) renderSugg(q,[],"Searching places…");
@@ -2129,7 +2140,7 @@ $("coords").addEventListener("submit",e=>{
   if(!Number.isFinite(la)||!Number.isFinite(lo)){ $("status").textContent="Enter both latitude and longitude as numbers, e.g. 22.6010 and 88.4040."; refit(); return; }
   flyToCoords(la,lo);
 });
-$("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(cardState==="search" && /^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
+$("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(/^\d/.test(v)) loadPins(); if(cardState==="search" && /^\d{6}$/.test(v) && (!here||here.pincode!==v)) locate(v); });
 
 render();
 go("search");
