@@ -1,0 +1,125 @@
+[
+  {
+    "request": {
+      "pincode": "700089",
+      "monthly_units": 250,
+      "roof_area": 40
+    },
+    "response": {
+      "system_kw": 2.3,
+      "limited_by_roof": false,
+      "too_small": false,
+      "peak_sun_hours": 4.57,
+      "yearly_generation_kwh": 3069,
+      "cost_before_subsidy": 126500,
+      "subsidy": 65400,
+      "cost_after_subsidy": 61100,
+      "monthly_bill_before": 1245,
+      "monthly_bill_after": 0,
+      "yearly_savings": 14940,
+      "payback_years": 4.1,
+      "co2_saved_kg_per_year": 2517,
+      "assumptions": {
+        "performance_ratio": 0.8,
+        "m2_per_kw": 10.0,
+        "cost_per_kw": 55000,
+        "grid_emission_factor_kg_per_kwh": 0.82,
+        "tariff": "WBSEDCL LT domestic, telescopic slabs (energy charge only)",
+        "subsidy": "PM Surya Ghar: ₹30k/kW up to 2 kW, ₹18k for 3rd kW, cap ₹78k; on-grid only",
+        "peak_sun_hours_source": "NASA POWER"
+      },
+      "input": {
+        "monthly_units": 250.0,
+        "roof_area": 40.0,
+        "system_type": "on-grid"
+      },
+      "location": {
+        "pincode": "700089",
+        "lat": 22.6045,
+        "lon": 88.4028
+      }
+    }
+  },
+  {
+    "request": {
+      "pincode": "743235",
+      "monthly_bill": 1800,
+      "roof_area": 25
+    },
+    "response": {
+      "system_kw": 2.5,
+      "limited_by_roof": true,
+      "too_small": false,
+      "peak_sun_hours": 4.55,
+      "yearly_generation_kwh": 3322,
+      "cost_before_subsidy": 137500,
+      "subsidy": 69000,
+      "cost_after_subsidy": 68500,
+      "monthly_bill_before": 1800,
+      "monthly_bill_after": 160,
+      "yearly_savings": 19679,
+      "payback_years": 3.5,
+      "co2_saved_kg_per_year": 2724,
+      "assumptions": {
+        "performance_ratio": 0.8,
+        "m2_per_kw": 10.0,
+        "cost_per_kw": 55000,
+        "grid_emission_factor_kg_per_kwh": 0.82,
+        "tariff": "WBSEDCL LT domestic, telescopic slabs (energy charge only)",
+        "subsidy": "PM Surya Ghar: ₹30k/kW up to 2 kW, ₹18k for 3rd kW, cap ₹78k; on-grid only",
+        "peak_sun_hours_source": "NASA POWER"
+      },
+      "input": {
+        "monthly_units": 327.6,
+        "roof_area": 25.0,
+        "system_type": "on-grid"
+      },
+      "location": {
+        "pincode": "743235",
+        "lat": 23.0803,
+        "lon": 88.8359
+      }
+    }
+  },
+  {
+    "request": {
+      "lat": 22.57,
+      "lon": 88.36,
+      "monthly_units": 500,
+      "roof_area": 60
+    },
+    "response": {
+      "system_kw": 4.55,
+      "limited_by_roof": false,
+      "too_small": false,
+      "peak_sun_hours": 4.57,
+      "yearly_generation_kwh": 6072,
+      "cost_before_subsidy": 250250,
+      "subsidy": 78000,
+      "cost_after_subsidy": 172250,
+      "monthly_bill_before": 3142,
+      "monthly_bill_after": 0,
+      "yearly_savings": 37710,
+      "payback_years": 4.6,
+      "co2_saved_kg_per_year": 4979,
+      "assumptions": {
+        "performance_ratio": 0.8,
+        "m2_per_kw": 10.0,
+        "cost_per_kw": 55000,
+        "grid_emission_factor_kg_per_kwh": 0.82,
+        "tariff": "WBSEDCL LT domestic, telescopic slabs (energy charge only)",
+        "subsidy": "PM Surya Ghar: ₹30k/kW up to 2 kW, ₹18k for 3rd kW, cap ₹78k; on-grid only",
+        "peak_sun_hours_source": "NASA POWER"
+      },
+      "input": {
+        "monthly_units": 500.0,
+        "roof_area": 60.0,
+        "system_type": "on-grid"
+      },
+      "location": {
+        "lat": 22.57,
+        "lon": 88.36
+      }
+    }
+  }
+]

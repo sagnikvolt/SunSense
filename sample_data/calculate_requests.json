@@ -1,0 +1,5 @@
+[
+  { "pincode": "700089", "monthly_units": 250, "roof_area": 40 },
+  { "pincode": "743235", "monthly_bill": 1800, "roof_area": 25 },
+  { "lat": 22.57, "lon": 88.36, "monthly_units": 500, "roof_area": 60 }
+]

@@ -188,7 +188,7 @@ git clone https://github.com/sagnikvolt/SunSense && cd SunSense && bash deploy.s
 
 ## License
 
-Copyright © 2026 Sagnik Kumar Nath. **All rights reserved.** The code is public so it can be read and judged. It may not be copied, reused or redistributed without written permission. See [LICENSE](LICENSE).
+Copyright © 2026 Sagnik Kumar Nath. Released under the **MIT License**, see [LICENSE](LICENSE). Third-party data and libraries keep their own licences (below).
 
 ### Credits
 - [CesiumJS](https://cesium.com/platform/cesiumjs/) (Apache-2.0) and Google Photorealistic 3D Tiles via Cesium ion
@@ -196,3 +196,25 @@ Copyright © 2026 Sagnik Kumar Nath. **All rights reserved.** The code is public
 - [NASA POWER](https://power.larc.nasa.gov/) solar data
 - Search suggestions: [Photon](https://photon.komoot.io) by komoot, data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL)
 - Pincode coordinates from [pincode-lat-long](https://www.npmjs.com/package/pincode-lat-long) (ISC)
+
+---
+
+## Hack for Social Cause 2027 (VBYLD 2027) submission
+
+SunSense is also entered in **Hack for Social Cause**, part of the Viksit Bharat Young Leaders Dialogue 2027 (MoYAS, MY Bharat portal, knowledge partner IIT Bombay). The WeMakeDevs × AWS sections above are unchanged.
+
+| | |
+|---|---|
+| **Registration ID** | HSC\|WB\|00080 |
+| **Team** | SunSense, team size 1, team lead Sagnik Kumar Nath (Institute of Engineering & Management, Kolkata) |
+| **State** | West Bengal |
+| **Theme** | Environment & Sustainability |
+| **UN SDGs** | SDG 7 Affordable & Clean Energy · SDG 11 Sustainable Cities & Communities · SDG 12 Responsible Consumption & Production · SDG 13 Climate Action |
+
+**Submission checklist**
+
+- **README with setup steps:** [Running locally](#running-locally) and [Deploying to AWS](#deploying-to-aws). No secrets are needed to run locally; optional environment variables are `PORT` (dev server, default 8000), `CACHE_BUCKET` and `ALLOWED_ORIGINS` (both set by `template.yaml` on AWS).
+- **Technical design document with architecture diagrams:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Sample data and test cases:** [sample_data/](sample_data/) (real requests and responses) and [backend/tests/](backend/tests/) (pytest suite)
+- **Licence:** [MIT](LICENSE)
+- **AI tools:** see [AI tools used](#ai-tools-used)
