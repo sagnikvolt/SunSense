@@ -6,8 +6,9 @@ PVGIS 5.3 (EU Joint Research Centre) integration.
   shscalc() off-grid simulation: how often the battery is full / empty
 
 PVGIS does not allow browser (CORS) calls, so this runs server-side only.
-Results are cached (S3 in Lambda, memory locally). Every field is read
-defensively: a missing or odd value becomes None instead of an error.
+Results are cached (S3 in Lambda, memory locally; Solar-lab results in memory
+only). Every field is read defensively: a missing or odd value becomes None
+instead of an error.
 """
 
 from __future__ import annotations
@@ -151,7 +152,7 @@ def horizon(lat: float, lon: float) -> dict:
     """
     q = {"lat": round(lat, 4), "lon": round(lon, 4), "outputformat": "json"}
     key = "pvgis/horizon/" + urllib.parse.urlencode(sorted(q.items())) + ".json"
-    if (hit := cache_get(key)):
+    if (hit := cache_get(key, s3=False)):
         return hit
     out = (_get_json(BASE + "printhorizon?" + urllib.parse.urlencode(q)) or {}).get("outputs") or {}
 
@@ -168,7 +169,7 @@ def horizon(lat: float, lon: float) -> dict:
            "summer": pts(out.get("summer_solstice"), "A_sun(s)", "H_sun(s)", False),
            "winter": pts(out.get("winter_solstice"), "A_sun(w)", "H_sun(w)", False)}
     if res["profile"]:
-        cache_put(key, res)
+        cache_put(key, res, s3=False)
     return res
 
 
@@ -212,8 +213,10 @@ def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
     else:
         raise ValueError("unknown tool")
 
+    # Memory only: lab inputs are free-form (any coordinate, any kWp), and hourly/TMY results are
+    # hundreds of KB each, so persisting them would let anyone grow the S3 bucket without limit.
     key = f"pvgis/lab/{api}/" + urllib.parse.urlencode(sorted(q.items())) + ".json"
-    if (hit := cache_get(key)):
+    if (hit := cache_get(key, s3=False)):
         return _with_horizon(tool, lat, lon, hit)
     d = _get_json(BASE + api + "?" + urllib.parse.urlencode(q))
     inp, out = d.get("inputs") or {}, d.get("outputs") or {}
@@ -258,7 +261,7 @@ def lab(tool: str, lat: float, lon: float, p: dict) -> dict:
         res.update(months_selected=out.get("months_selected") or [], first=str(rows[0].get("time(UTC)")) if rows else None,
                    T=col("T2m"), RH=col("RH", 0), GHI=col("G(h)", 0), DNI=col("Gb(n)", 0), DHI=col("Gd(h)", 0),
                    IR=col("IR(h)", 0), WS=col("WS10m"), WD=col("WD10m", 0), SP=col("SP", 0))
-    cache_put(key, res)
+    cache_put(key, res, s3=False)
     return _with_horizon(tool, lat, lon, res)
 
 

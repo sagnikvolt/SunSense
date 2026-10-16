@@ -4,8 +4,8 @@ Location -> peak sun hours.
   pincode  --(OpenStreetMap Nominatim)-->  lat/lon
   lat/lon  --(NASA POWER climatology, PVGIS fallback)-->  peak sun hours
 
-Results are cached in S3 when CACHE_BUCKET is set (Lambda), otherwise in a
-local dict so it also works on your laptop. Standard library only, plus boto3
+Results are cached in S3 when CACHE_BUCKET is set (Lambda), and in a size-bounded
+in-memory LRU either way, so it also works on your laptop. Standard library only, plus boto3
 which the Lambda Python runtime already includes.
 """
 
@@ -20,13 +20,60 @@ USER_AGENT = "SunSense/0.1 (WeMakeDevs Environmental Hacks; github.com/sagnikvol
 TIMEOUT = 8  # seconds per upstream call; Lambda timeout is set higher in template.yaml
 
 CACHE_BUCKET = os.environ.get("CACHE_BUCKET")
-_local_cache: dict[str, dict] = {}
 _s3 = None
 
 
 # ---------------------------------------------------------------------------
-# Cache (S3 in Lambda, dict locally)
+# Cache (S3 in Lambda, memory locally and in front of S3)
 # ---------------------------------------------------------------------------
+
+class MemoryCache:
+    """LRU cache bounded by entry count and by estimated memory, so a warm Lambda (256 MB) can't run out.
+
+    Size is estimated from the JSON length: parsed JSON (lists of floats) takes roughly 3-7x its text size
+    in Python, so a TMY result (~0.5 MB of JSON) counts as ~3 MB.
+    """
+    BYTES_PER_JSON_CHAR = 6
+
+    def __init__(self, max_entries: int = 5000, max_bytes: int = 64 * 1024 * 1024):
+        self.max_entries, self.max_bytes = max_entries, max_bytes
+        self._items: dict[str, tuple[dict, int]] = {}      # insertion order = least recently used first
+        self.bytes = 0
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._items
+
+    def __len__(self) -> int:
+        return len(self._items)
+
+    def get(self, key: str) -> dict | None:
+        item = self._items.pop(key, None)
+        if item is None:
+            return None
+        self._items[key] = item                         # mark as most recently used
+        return item[0]
+
+    def put(self, key: str, value: dict, json_len: int | None = None) -> None:
+        size = (len(json.dumps(value)) if json_len is None else json_len) * self.BYTES_PER_JSON_CHAR
+        self.pop(key)
+        if size > self.max_bytes:                       # bigger than the whole cache: don't keep it
+            return
+        while self._items and (len(self._items) >= self.max_entries or self.bytes + size > self.max_bytes):
+            self.pop(next(iter(self._items)))
+        self._items[key] = (value, size)
+        self.bytes += size
+
+    def pop(self, key: str) -> None:
+        item = self._items.pop(key, None)
+        if item is not None:
+            self.bytes -= item[1]
+
+    def clear(self) -> None:
+        self._items.clear()
+        self.bytes = 0
+
+
+_local_cache = MemoryCache()
 
 def _s3_client():
     global _s3
@@ -36,29 +83,30 @@ def _s3_client():
     return _s3
 
 
-def cache_get(key: str) -> dict | None:
-    if key in _local_cache:
-        return _local_cache[key]
-    if not CACHE_BUCKET:
+def cache_get(key: str, s3: bool = True) -> dict | None:
+    """s3=False: memory only, for results keyed on arbitrary user input (see pvgis.lab)."""
+    if (hit := _local_cache.get(key)) is not None:
+        return hit
+    if not (s3 and CACHE_BUCKET):
         return None
     try:
         obj = _s3_client().get_object(Bucket=CACHE_BUCKET, Key=key)
-        value = json.loads(obj["Body"].read())
-        _local_cache[key] = value
+        body = obj["Body"].read()
+        value = json.loads(body)
+        _local_cache.put(key, value, json_len=len(body))
         return value
     except Exception:
         return None
 
 
-def cache_put(key: str, value: dict) -> None:
-    if len(_local_cache) > 5000:          # keep a warm Lambda's memory bounded
-        _local_cache.clear()
-    _local_cache[key] = value
-    if not CACHE_BUCKET:
+def cache_put(key: str, value: dict, s3: bool = True) -> None:
+    body = json.dumps(value)
+    _local_cache.put(key, value, json_len=len(body))
+    if not (s3 and CACHE_BUCKET):
         return
     try:
         _s3_client().put_object(Bucket=CACHE_BUCKET, Key=key,
-                                Body=json.dumps(value).encode(),
+                                Body=body.encode(),
                                 ContentType="application/json")
     except Exception:
         pass  # cache is best-effort; never fail a request because of it
@@ -70,6 +118,10 @@ def cache_put(key: str, value: dict) -> None:
 
 MAX_RESPONSE_BYTES = 3_000_000   # TMY JSON is ~1.3 MB
 ALLOWED_HOSTS = {"power.larc.nasa.gov", "re.jrc.ec.europa.eu", "nominatim.openstreetmap.org"}
+
+
+class UpstreamError(Exception):
+    """An upstream API was down or sent something unusable. Not a ValueError, so it is never reported as bad input."""
 
 
 def _get_json(url: str) -> dict | list:
@@ -123,13 +175,16 @@ def geocode_pincode(pincode: str) -> dict:
 
     q = urllib.parse.urlencode({"postalcode": pincode, "country": "India",
                                 "format": "json", "limit": 1})
-    results = _get_json(f"https://nominatim.openstreetmap.org/search?{q}")
-    if not results:
+    try:
+        results = _get_json(f"https://nominatim.openstreetmap.org/search?{q}")
+        place = results and {"lat": round(float(results[0]["lat"]), 4),
+                             "lon": round(float(results[0]["lon"]), 4),
+                             "place": results[0].get("display_name", "")}
+    except Exception as e:
+        raise UpstreamError("Nominatim") from e
+    if not place:
         raise LookupError(f"could not find pincode {pincode}")
 
-    place = {"lat": round(float(results[0]["lat"]), 4),
-             "lon": round(float(results[0]["lon"]), 4),
-             "place": results[0].get("display_name", "")}
     cache_put(key, place)
     return place
 

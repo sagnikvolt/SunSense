@@ -23,7 +23,7 @@ import os
 import re
 
 from calculator import MAX_ROOF_M2, MAX_UNITS, calculate, units_from_bill
-from data_sources import resolve_location
+from data_sources import UpstreamError, resolve_location
 import pvgis
 from calculator import GRID_EMISSION_FACTOR, monthly_savings
 
@@ -37,6 +37,13 @@ INDIA = {"lat": (6.0, 37.5), "lon": (68.0, 97.5)}
 
 class BadRequest(ValueError):
     pass
+
+
+def _log(tag: str, e: BaseException) -> None:
+    """Full error detail goes to CloudWatch only; clients never see exception text."""
+    cause = e.__cause__
+    detail = f"{type(e).__name__}: {e}" + (f" <- {type(cause).__name__}: {cause}" if cause else "")
+    print(f"{tag} {detail[:500]}")
 
 
 def _headers(origin: str | None) -> dict:
@@ -201,10 +208,10 @@ def lambda_handler(event, context=None):
         if path.rstrip("/").endswith("/pvgis"):
             try:
                 return _resp(200, _lab(body), origin)
-            except (BadRequest, ValueError) as e:
+            except BadRequest as e:
                 return _resp(400, {"error": str(e)[:200]}, origin)
-            except Exception as e:  # noqa: BLE001 — PVGIS down / slow
-                print(f"PVGIS lab error {type(e).__name__}")
+            except Exception as e:  # noqa: BLE001 — PVGIS down, slow, or sent unusable data
+                _log("PVGIS lab error", e)
                 return _resp(502, {"error": "PVGIS isn't responding right now. Try again in a minute."}, origin)
 
         units = _num(body, "monthly_units", 0, MAX_UNITS)
@@ -247,10 +254,13 @@ def lambda_handler(event, context=None):
         result["location"] = {k: location.get(k) for k in ("pincode", "lat", "lon") if location.get(k) is not None}
         return _resp(200, result, origin)
 
+    except UpstreamError as e:
+        _log("upstream error", e)
+        return _resp(502, {"error": "Location lookup isn't responding right now. Try again in a minute."}, origin)
     except (BadRequest, LookupError) as e:
         return _resp(400, {"error": str(e)[:200]}, origin)
     except ValueError as e:              # from calculate()'s own checks
         return _resp(400, {"error": str(e)[:200]}, origin)
     except Exception as e:  # noqa: BLE001
-        print(f"ERROR {type(e).__name__}")
+        _log("ERROR", e)
         return _resp(500, {"error": "internal error"}, origin)
