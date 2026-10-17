@@ -198,7 +198,7 @@ input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid
 .pair{display:grid;gap:14px}
 #state-h a{color:inherit}
 .cmp-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.cmp-kpis div{border:1px solid var(--edge-soft);border-radius:12px;padding:8px 10px;display:grid;gap:2px;min-width:0;align-content:start}
+.cmp-kpis > *{border:1px solid var(--edge-soft);border-radius:12px;padding:8px 10px;display:grid;gap:2px;min-width:0;align-content:start}
 .cmp-kpis .k{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .cmp-kpis .v{font:700 18px/1.2 var(--f-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmp-kpis .grid .v{color:var(--gridc)} .cmp-kpis .save .v{color:var(--good)}
@@ -238,6 +238,9 @@ input[type=number]{width:100%;font:500 17px var(--f-mono);color:var(--ink);backg
 .seg button{font:600 14px var(--f-body);background:transparent;color:var(--muted);border:0;border-radius:9px;padding:8px;cursor:pointer}
 .seg button[aria-pressed=true]{background:rgba(255,255,255,.16);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
 .seg button:disabled{opacity:.45;cursor:not-allowed}
+.seg.sm{grid-template-columns:auto auto;padding:2px;gap:2px;border-radius:10px}
+.seg.sm button{font-size:13px;padding:4px 11px;border-radius:8px}
+.psh:has(.seg.sm){align-items:center}
 .srcbar{display:grid;gap:8px;padding:12px 14px;border-radius:16px}
 .srcbar .src-st{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;line-height:1.45}
 .srcbar .src-st i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--muted)}
@@ -264,7 +267,7 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .chip.warn{border-color:var(--warn);color:var(--warn)}
 .chip.good{border-color:var(--good);color:var(--good)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;padding:0}
-.stat{padding:12px 14px;display:grid;gap:1px;border-right:1px solid var(--edge-soft);border-bottom:1px solid var(--edge-soft)}
+.stat{padding:12px 14px;display:grid;gap:1px;border:0;border-right:1px solid var(--edge-soft);border-bottom:1px solid var(--edge-soft)}
 .stat:nth-child(2n){border-right:0}
 .stat:nth-last-child(-n+2){border-bottom:0}
 .stat .k{font-size:13px;color:var(--muted)}
@@ -272,6 +275,39 @@ input[type=range]{width:100%;accent-color:var(--sun)}
 .stat .s{font-size:12px;color:var(--muted)}
 .stat.hl .v{color:var(--sun-ink)}
 .box{padding:16px;display:grid;gap:10px;min-width:0}
+/* "How was this calculated?": tiles are buttons that open their breakdown */
+button.stat,.cmp-kpis button,button.payback{font-family:inherit;color:inherit;text-align:left;cursor:pointer;margin:0;position:relative}
+button.stat,.cmp-kpis button{background:transparent;transition:background .15s}
+button.stat:hover,.cmp-kpis button:hover{background:rgba(255,255,255,.06)}
+button.stat[aria-expanded=true],.cmp-kpis button[aria-expanded=true]{background:rgba(255,190,46,.1);box-shadow:inset 0 -2px 0 var(--sun)}
+button.stat::after,.cmp-kpis button::after{content:"+";position:absolute;top:7px;right:10px;font:500 14px/1 var(--f-mono);color:var(--faint)}
+button.stat[aria-expanded=true]::after,.cmp-kpis button[aria-expanded=true]::after{content:"−";color:var(--sun-ink)}
+.cmp-kpis button .k{padding-right:14px}
+button.stat:focus-visible{outline-offset:-3px}
+button.payback{border:0;padding:0 0 2px;border-bottom:2px dashed transparent}
+button.payback:hover,button.payback[aria-expanded=true]{border-bottom-color:rgba(255,190,46,.6)}
+.why-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 12px;margin-top:-6px;padding:0 4px}
+.why-bar .hint{font-size:12.5px}
+.why-all{background:none;border:0;padding:6px 0;color:var(--sun-ink);font:600 13px var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.why{padding:14px 16px;display:grid;gap:12px;min-width:0}
+.why-in{padding:4px 0 0}
+.why-s{display:grid;gap:6px;min-width:0}
+.why-s+.why-s{border-top:1px solid var(--edge-soft);padding-top:12px}
+.why-s h3{margin:0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;font:600 14px var(--f-body);color:var(--ink)}
+.why-s h3 .res{font:500 14px var(--f-mono);color:var(--sun-ink)}
+.why-s ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.why-s li::marker{color:var(--faint);font:12px var(--f-mono)}
+.why-s b{color:var(--sun-ink);font-weight:600}
+.why-s small{font-size:12px;color:var(--faint)}
+.why-n{margin:0;line-height:1.4}
+.why-s .f{font:12.5px var(--f-mono);color:var(--ink);overflow-wrap:anywhere}
+.why-tw{overflow-x:auto;margin-top:6px}
+.why-t{width:100%;border-collapse:collapse;font:12.5px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.why-t td{padding:4px 6px;border-bottom:1px solid var(--edge-soft);vertical-align:top}
+.why-t td:first-child{font-family:var(--f-body);color:var(--muted);padding-left:0}
+.why-t td:last-child{text-align:right;white-space:nowrap;padding-right:0}
+.why-t tr.tot td{border-bottom:0;font-weight:600;color:var(--sun-ink)}
+@media (max-width:520px){.why{padding:12px}.why-s ol{padding-left:16px;font-size:13px}.why-t{font-size:11.5px}.why-t td{padding:4px 3px}}
 .roof{display:grid;gap:4px;padding:10px;border-radius:10px;border:1px dashed var(--edge-soft);
   background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 6px,transparent 6px 12px)}
 .pv{aspect-ratio:1/1.7;border-radius:2px;background:linear-gradient(var(--cell-2),var(--cell));position:relative;max-width:100%;transition:opacity .2s}
@@ -599,9 +635,13 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
               <span class="hint" id="use-h">From the "units consumed" line on your electricity bill.</span>
             </div>
             <div class="field">
-              <label for="roof">Free roof area</label>
-              <div class="unit"><input id="roof" type="number" min="0" max="10000" step="1" value="30"><span>m²</span></div>
-              <span class="hint">Shade-free space only. About 10 m² per kW.</span>
+              <div class="psh"><label for="roof">Free roof area</label>
+                <div class="seg sm" role="group" aria-label="Roof area unit">
+                  <button type="button" id="roof-m2" aria-pressed="true">m²</button>
+                  <button type="button" id="roof-ft" aria-pressed="false">sq ft</button>
+                </div></div>
+              <div class="unit"><input id="roof" type="number" min="0" max="10000" step="0.1" value="30" data-m2="30" aria-describedby="roof-u roof-h"><span id="roof-u">m²</span></div>
+              <span class="hint" id="roof-h">Shade-free space only. About 10 m² per kW.</span>
             </div>
             <div class="field">
               <span class="lbl" id="grid-l">Connection</span>
@@ -626,7 +666,7 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
             <div class="src-st" id="src-st" data-s="busy" aria-live="polite"><i aria-hidden="true"></i><span id="src-txt">Running the PVGIS simulation for your roof…</span></div>
           </div>
           <section class="lead glass-2 rv">
-            <div class="payback" id="pb">4.1<small>years</small></div>
+            <button type="button" class="payback" id="pb" data-why="pb" aria-controls="why" aria-expanded="false" aria-describedby="why-d">4.1<small>years</small></button>
             <div>
               <div class="k">Payback</div>
               <p id="lead-p"></p>
@@ -634,16 +674,20 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
             <div class="chips" id="chips"></div>
           </section>
           <div class="stats glass-2 rv">
-            <div class="stat hl"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></div>
-            <div class="stat"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s" id="s-gen-s">kWh per year</span></div>
-            <div class="stat"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></div>
-            <div class="stat"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></div>
-            <div class="stat"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s" id="s-bill-s">energy + fixed charge</span></div>
-            <div class="stat"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></div>
+            <button type="button" class="stat hl" data-why="kw" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">System size</span><span class="v" id="s-kw">2.3 kW</span><span class="s" id="s-panels">≈ 5 panels</span></button>
+            <button type="button" class="stat" data-why="gen" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">Yearly generation</span><span class="v" id="s-gen">3,022</span><span class="s" id="s-gen-s">kWh per year</span></button>
+            <button type="button" class="stat" data-why="gross" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">Cost before subsidy</span><span class="v" id="s-gross">₹1,26,500</span><span class="s">installed</span></button>
+            <button type="button" class="stat" data-why="sub" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">Subsidy</span><span class="v" id="s-sub">₹65,400</span><span class="s">PM Surya Ghar</span></button>
+            <button type="button" class="stat" data-why="bill" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">Monthly bill</span><span class="v" id="s-bill">₹1,245 → ₹0</span><span class="s" id="s-bill-s">energy + fixed charge</span></button>
+            <button type="button" class="stat" data-why="co2" aria-controls="why" aria-expanded="false" aria-describedby="why-d"><span class="k">CO₂ avoided</span><span class="v" id="s-co2">2.5 t</span><span class="s">per year</span></button>
           </div>
+          <div class="why-bar rv"><span class="hint" id="why-d">Tap any number to see how it was worked out.</span>
+            <button type="button" class="why-all" id="why-all" aria-expanded="false" aria-controls="why why-cmp">Show all calculations</button></div>
+          <section class="why glass-2" id="why" hidden aria-label="How these numbers were calculated"></section>
           <div class="box glass-2 rv" id="cmp-box">
             <div class="pvhead"><h2>Grid vs solar over 25 years</h2><span class="src" id="cmp-src"></span></div>
             <div class="cmp-kpis" id="cmp-kpis"></div>
+            <section class="why why-in" id="why-cmp" hidden aria-label="How the 25-year numbers were calculated"></section>
             <svg class="chart" id="chart" viewBox="0 0 520 240" role="img" aria-label="Money spent on electricity over 25 years: only the grid versus with rooftop solar"></svg>
             <div class="cmp-legend" aria-hidden="true"><span class="lg lg-grid">Only the grid</span><span class="lg lg-sol">With solar (incl. upfront cost)</span></div>
             <div class="field cmp-esc"><div class="psh"><label for="esc">Grid price rise per year</label><output id="esc-o" for="esc">3%</output></div>
@@ -829,47 +873,59 @@ const tariff=()=>curState==="XX"?null:TARIFFS.states[curState]||null;
 const hasRates=t=>!!(t&&(t.slabs||t.tables));
 const ownRate=()=>{ const v=parseFloat($("rate").value); return Number.isFinite(v)?Math.min(Math.max(v,0.5),30):7; };
 const loadKw=u=>Math.min(Math.max(Math.ceil(u/100),1),20);           // assumed sanctioned load
-function slabCharge(u,slabs,flat){
-  if(u<=0) return 0;
-  if(flat){ for(const [up,r] of slabs) if(up==null||u<=up) return u*r; return 0; }
-  let c=0,lo=0; for(const [up,r] of slabs){ const hi=up==null?Infinity:up; if(u<=lo) break; c+=(Math.min(u,hi)-lo)*r; lo=hi; } return c;
+// The bill functions return their parts (each slab, each fixed charge) and the totals are the sums of those
+// parts, so "How was this calculated?" shows exactly the numbers the tiles add up.
+const sum=(a,f=x=>x.amt)=>a.reduce((s,x)=>s+f(x),0);
+function slabLines(u,slabs,flat){
+  if(u<=0) return [];
+  if(flat){ for(const [up,r] of slabs) if(up==null||u<=up) return [{lo:0,hi:up,units:u,rate:r,amt:u*r,flat:true}]; return []; }
+  const out=[]; let lo=0; for(const [up,r] of slabs){ const hi=up==null?Infinity:up; if(u<=lo) break; const n=Math.min(u,hi)-lo; out.push({lo,hi:up,units:n,rate:r,amt:n*r}); lo=hi; } return out;
 }
-function energyCharge(u){
-  const t=tariff(); if(!hasRates(t)) return Math.max(u,0)*ownRate();
-  if(t.tables){ const tb=t.tables.find(x=>x.max==null||u<=x.max)||t.tables[t.tables.length-1]; return slabCharge(u,tb.slabs,tb.flat); }
-  return slabCharge(u,t.slabs,false);
+function energyLines(u){
+  const t=tariff(); if(!hasRates(t)){ u=Math.max(u,0); return u>0?[{lo:0,hi:null,units:u,rate:ownRate(),amt:u*ownRate(),own:true}]:[]; }
+  if(t.tables){ const tb=t.tables.find(x=>x.max==null||u<=x.max)||t.tables[t.tables.length-1]; return slabLines(u,tb.slabs,tb.flat); }
+  return slabLines(u,t.slabs,false);
 }
-function fixedCharge(u,load){
-  const t=tariff(); if(!hasRates(t)) return 0; let f=0;
+function fixedLines(u,load){
+  const t=tariff(); if(!hasRates(t)) return []; const out=[];
   const band=(b,x)=>{ for(const [up,v] of b) if(up==null||x<=up) return v; return null; };
   for(const c of t.fixed||[]){
-    if(c.t==="month") f+=c.v;
-    else if(c.t==="kw"){ if(!c.min_units||u>=c.min_units) f+=c.v*load; }
-    else if(c.t==="kw_load"){ const v=band(c.b,load); if(v!=null) f+=v*load; }
-    else if(c.t==="load"){ const v=band(c.b,load); if(v!=null) f+=v; }
-    else if(c.t==="bands"){ const v=band(c.b,u); f+= v!=null ? v : (c.above_per_unit||0)*u; }
+    if(c.t==="month") out.push({what:`₹${c.v} a month`,amt:c.v});
+    else if(c.t==="kw"){ if(!c.min_units||u>=c.min_units) out.push({what:`₹${c.v}/kW × ${load} kW load`,amt:c.v*load}); }
+    else if(c.t==="kw_load"){ const v=band(c.b,load); if(v!=null) out.push({what:`₹${v}/kW × ${load} kW load`,amt:v*load}); }
+    else if(c.t==="load"){ const v=band(c.b,load); if(v!=null) out.push({what:`₹${v} for a ${load} kW load`,amt:v}); }
+    else if(c.t==="bands"){ const v=band(c.b,u); out.push(v!=null?{what:`₹${v} at this use`,amt:v}:{what:`₹${c.above_per_unit||0}/unit × ${+u.toFixed(1)} units`,amt:(c.above_per_unit||0)*u}); }
   }
-  return f;
+  return out;
 }
+const energyCharge=u=>sum(energyLines(u)), fixedCharge=(u,load)=>sum(fixedLines(u,load));
 // Monthly grid bill for u units, with the sanctioned load of the home (load doesn't change when solar is added)
-function billMonth(u,load){ u=Math.max(u,0); const t=tariff(); return energyCharge(u)+fixedCharge(u,load)+(hasRates(t)?(t.extra||0)*u:0); }
+function billParts(u,load){
+  u=Math.max(u,0); const t=tariff(), energy=energyLines(u), fixed=fixedLines(u,load), extra=hasRates(t)?(t.extra||0)*u:0;
+  return {u,load,energy,fixed,extra,extraRate:hasRates(t)?t.extra||0:0,total:sum(energy)+sum(fixed)+extra};
+}
+function billMonth(u,load){ return billParts(u,load).total; }
 function unitsFromBill(b){
   if(b<=0) return 0; let lo=0,hi=100000;
   for(let i=0;i<60;i++){ const m=(lo+hi)/2; if(billMonth(m,loadKw(m))<b) lo=m; else hi=m; } return lo;
 }
 const isSpecial=()=>(TARIFFS.special_category||[]).includes(curState);
-function subsidy(kw,type){
-  if(type!=="on-grid"||kw<=0) return 0;
-  const [a,b,cap]=isSpecial()?[33000,19800,85800]:[30000,18000,78000];
-  return Math.min(Math.min(kw,2)*a+Math.max(Math.min(kw,3)-2,0)*b,cap);
+function subsidyParts(kw,type){
+  const special=isSpecial(), [a,b,cap]=special?[33000,19800,85800]:[30000,18000,78000];
+  if(type!=="on-grid"||kw<=0) return {special,a,b,cap,k1:0,k2:0,raw:0,total:0,none:true};
+  const k1=Math.min(kw,2), k2=Math.max(Math.min(kw,3)-2,0), raw=k1*a+k2*b;
+  return {special,a,b,cap,k1,k2,raw,total:Math.min(raw,cap)};
 }
+const subsidy=(kw,type)=>subsidyParts(kw,type).total;
 function calculate(units,roof,psh,type){
   const cap=roof/C.M2_PER_KW, need=psh>0?units/(30*psh*C.PR):0;
   const kw=Math.round(Math.min(need,cap)/C.STEP)*C.STEP;
-  const gen=kw*psh*365*C.PR, gross=kw*C.COST_PER_KW, sub=Math.min(subsidy(kw,type),gross), net=gross-sub, load=loadKw(units);
-  const before=billMonth(units,load), after=billMonth(units-gen/12,load), save=(before-after)*12;
-  return {kw:+kw.toFixed(2), limited:need>cap, small:kw<C.MIN_KW, gen, gross, sub, net, before, after, save, load,
-          payback: save>0? net/save : null, co2: gen*C.EF};
+  const gen=kw*psh*365*C.PR, gross=kw*C.COST_PER_KW, subP=subsidyParts(kw,type), sub=Math.min(subP.total,gross), net=gross-sub, load=loadKw(units);
+  const billBefore=billParts(units,load), billAfter=[billParts(units-gen/12,load)];
+  const before=billBefore.total, after=billAfter[0].total, save=(before-after)*12;
+  return {kw:+kw.toFixed(2), limited:need>cap, small:kw<C.MIN_KW, gen, gross, sub, subP, net, before, after, save, load,
+          payback: save>0? net/save : null, co2: gen*C.EF, billBefore, billAfter,
+          size:{units,roof,psh,need,cap,raw:Math.min(need,cap),src:"est"}};
 }
 
 const num=(id,max)=>{ const v=parseFloat($(id).value); return Number.isFinite(v) ? Math.min(Math.max(v,0),max) : 0; };
@@ -884,25 +940,62 @@ $("by-bill").onclick=()=>{ if(byBill) return; const u=num("use",1e6); byBill=tru
   $("use").value=Math.round(billMonth(u,loadKw(u))); $("use-u").textContent="₹"; $("use-h").textContent="Energy + fixed charge on your monthly bill, before duty and fuel surcharge."; render(); };
 $("on").onclick=()=>{ type="on-grid"; press($("on"),$("off")); render(); };
 $("off").onclick=()=>{ type="off-grid"; press($("off"),$("on")); render(); };
+
+// ---------- Roof area: shown in m² or sq ft, always kept, sent and cached in m² ----------
+// Switching unit only re-displays the same m² value, so results and cache keys never change.
+const SQFT=10.7639;
+let roofM2=+$("roof").dataset.m2||0, roofUnit="sqft";              // sq ft is what most Indian homes know their roof in
+try{ if(localStorage.getItem("ss-roof-unit")==="m2") roofUnit="m2"; }catch{}
+const roofArea=()=>Math.min(Math.max(roofM2,0),1e4);
+const roofTxt=m2=>roofUnit==="sqft"?`${fmt(m2*SQFT)} sq ft`:`${(Math.round(m2*10)/10).toLocaleString("en-IN")} m²`;
+function showRoofUnit(){
+  const sq=roofUnit==="sqft", el=$("roof");
+  press(sq?$("roof-ft"):$("roof-m2"), sq?$("roof-m2"):$("roof-ft"));
+  el.max=sq?Math.round(1e4*SQFT):1e4; el.step=sq?1:0.1;
+  if(el.value!=="") el.value=sq?Math.round(roofM2*SQFT):Math.round(roofM2*10)/10;
+  $("roof-u").textContent=sq?"sq ft":"m²";
+  $("roof-h").textContent=`Shade-free space only. About ${sq?"108 sq ft":"10 m²"} per kW.`;
+}
+function setRoofUnit(u){
+  if(u===roofUnit) return; roofUnit=u; try{ localStorage.setItem("ss-roof-unit",u); }catch{}
+  showRoofUnit(); render();
+}
+$("roof-m2").onclick=()=>setRoofUnit("m2");
+$("roof-ft").onclick=()=>setRoofUnit("sqft");
+$("roof").addEventListener("input",()=>{                   // runs before the render/PVGIS listeners below
+  const v=parseFloat($("roof").value);
+  roofM2=Number.isFinite(v)?Math.min(Math.max(roofUnit==="sqft"?Math.round(v/SQFT*100)/100:v,0),1e4):0;
+});
+showRoofUnit();
+
 ["use","roof","psh","esc","rate"].forEach(id=>$(id).addEventListener("input",render));
 $("f").addEventListener("submit",e=>e.preventDefault());
 
 let useEst=false;                                         // user picked "Quick estimate" in the source toggle
+// Tile text, shared by the tiles and their "How was this calculated?" breakdowns so the two can never disagree
+const TILE={pb:r=>r.payback==null?"—":r.payback.toFixed(1), kw:r=>r.kw+" kW", gen:r=>fmt(r.gen), gross:r=>inr(r.gross),
+  sub:r=>inr(r.sub), bill:r=>`${inr(r.before)} → ${inr(r.after)}`, co2:r=>(r.co2/1000).toFixed(1)+" t"};
 function usingPV(){ return !useEst && typeof pvLive==="function" && pvLive(); }
 function render(){
   const psh=+$("psh").value; $("psh-o").textContent=psh.toFixed(2).replace(/0$/,"")+" h/day";
-  const raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
-  const r=calculate(units,roof,psh,type); window.__estGen=r.gen;
+  const raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=roofArea();
+  const r=calculate(units,roof,psh,type); window.__estGen=r.gen; r.est={gen:r.gen,psh}; r.byBill=byBill; r.bill=byBill?raw:null;
   if(usingPV()){            // PVGIS simulation for exactly these inputs (unless the user chose the quick estimate)
     Object.assign(r,{kw:pv.system_kw,gen:pv.yearly_generation_kwh,co2:pv.co2_saved_kg_per_year,gross:pv.cost_before_subsidy});
-    r.sub=Math.min(subsidy(r.kw,type),r.gross); r.net=r.gross-r.sub;
+    // the server sized the system with the same formula, from the inputs it was sent and its own sun hours
+    const su=pv.input&&pv.input.monthly_units, sr=pv.input&&pv.input.roof_area, sp=pv.peak_sun_hours;
+    if([su,sr,sp].every(Number.isFinite)){ const need=sp>0?su/(30*sp*C.PR):0, cap=sr/C.M2_PER_KW;
+      r.size={units:su,roof:sr,psh:sp,need,cap,raw:Math.min(need,cap),src:"pv"}; }
+    else r.size=Object.assign({},r.size,{src:"pv-unknown"});
+    r.subP=subsidyParts(r.kw,type); r.sub=Math.min(r.subP.total,r.gross); r.net=r.gross-r.sub;
+    r.pvgis=pv.pvgis;
     r.monthly=pv.pvgis&&pv.pvgis.monthly_kwh&&pv.pvgis.monthly_kwh.length===12?pv.pvgis.monthly_kwh:null;
-    if(r.monthly){ r.after=r.monthly.reduce((a,m)=>a+billMonth(units-m,r.load),0)/12; r.save=(r.before-r.after)*12; }
-    else { r.after=billMonth(units-r.gen/12,r.load); r.save=(r.before-r.after)*12; }
+    if(r.monthly){ r.billAfter=r.monthly.map(m=>billParts(units-m,r.load)); r.after=sum(r.billAfter,b=>b.total)/12; r.save=(r.before-r.after)*12; }
+    else { r.billAfter=[billParts(units-r.gen/12,r.load)]; r.after=r.billAfter[0].total; r.save=(r.before-r.after)*12; }
     r.payback=r.save>0?r.net/r.save:null;
   }
 
-  $("pb").innerHTML = r.payback==null ? "—<small>years</small>" : r.payback.toFixed(1)+"<small>years</small>";
+  $("pb").innerHTML = TILE.pb(r)+"<small>years</small>";
   $("lead-p").textContent = r.kw<=0 ? "Enter your electricity use and roof area to size a system."
     : `A ${r.kw} kW system costs ${inr(r.net)} after subsidy and saves about ${inr(r.save)} a year.`;
   const chips=[];
@@ -915,10 +1008,10 @@ function render(){
   $("chips").innerHTML=chips.map(([c,t])=>`<span class="chip ${c}">${t}</span>`).join("");
 
   const panels=Math.max(Math.ceil(r.kw/C.PANEL_KW),0);
-  $("s-kw").textContent=r.kw+" kW"; $("s-panels").textContent=`≈ ${panels} panel${panels===1?"":"s"} of 540 W`;
-  $("s-gen").textContent=fmt(r.gen); $("s-co2").textContent=(r.co2/1000).toFixed(1)+" t";
-  $("s-gross").textContent=inr(r.gross); $("s-sub").textContent=inr(r.sub);
-  $("s-bill").textContent=`${inr(r.before)} → ${inr(r.after)}`;
+  $("s-kw").textContent=TILE.kw(r); $("s-panels").textContent=`≈ ${panels} panel${panels===1?"":"s"} of 540 W`;
+  $("s-gen").textContent=TILE.gen(r); $("s-co2").textContent=TILE.co2(r);
+  $("s-gross").textContent=TILE.gross(r); $("s-sub").textContent=TILE.sub(r);
+  $("s-bill").textContent=TILE.bill(r);
   $("s-gen-s").textContent = usingPV() ? "kWh per year · PVGIS" : "kWh per year · quick estimate";
 
   // roof plan: panels vs usable area
@@ -926,25 +1019,25 @@ function render(){
   const slots=Math.max(Math.floor(roof/2.6),panels); // ~2.6 m² per 540 W panel incl. spacing
   const g=$("roofgrid"); g.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;
   g.innerHTML=Array.from({length:Math.min(slots,60)},(_,i)=>`<div class="pv" style="opacity:${i<panels?1:.12}"></div>`).join("");
-  $("roof-cap").textContent = roof>0 ? `${panels} panels on about ${Math.round(panels*2.6)} m² of your ${fmt(roof)} m² roof.` : "Add your roof area.";
+  $("roof-cap").textContent = roof>0 ? `${panels} panels on about ${roofTxt(panels*2.6)} of your ${roofTxt(roof)} roof.` : "Add your roof area.";
 
-  drawChart(r,units); renderStateInfo(); window.__lastR=r; refreshFancy();
+  r.cmp=drawChart(r,units); renderStateInfo(); window.__lastR=r; refreshFancy(); renderWhy();
   if(typeof renderPV==="function") renderPV();
 }
 
 function compare25(r,units){
   const esc=+$("esc").value/100, yrs=C.YEARS, upkeep=r.gross*C.UPKEEP;
-  const grid=[0], sol=[r.net]; let genSum=0, upSum=0;
+  const grid=[0], sol=[r.net], gBills=[0], sBills=[0]; let genSum=0, upSum=0;
   for(let y=1;y<=yrs;y++){
     const d=Math.pow(1-C.DEGRADE,y-1), up=Math.pow(1+esc,y-1);
     const gBill=r.before*12*up;
     let sBill;
     if(r.monthly) sBill=r.monthly.reduce((a,m)=>a+billMonth(units-m*d,r.load),0)*up;
     else sBill=billMonth(units-r.gen*d/12,r.load)*12*up;
-    grid.push(grid[y-1]+gBill); sol.push(sol[y-1]+sBill+upkeep); genSum+=r.gen*d; upSum+=upkeep;
+    grid.push(grid[y-1]+gBill); sol.push(sol[y-1]+sBill+upkeep); gBills.push(gBill); sBills.push(sBill); genSum+=r.gen*d; upSum+=upkeep;
   }
-  let be=null; for(let y=1;y<=yrs;y++) if(sol[y]<=grid[y]){ const a=grid[y-1]-sol[y-1], b=grid[y]-sol[y]; be=y-1+(a<0? -a/(b-a):0); break; }
-  return {grid,sol,be,esc,gridUnit:units>0?r.before/units:0,solarUnit:genSum>0?(r.net+upSum)/genSum:0};
+  let be=null, beY=null; for(let y=1;y<=yrs;y++) if(sol[y]<=grid[y]){ const a=grid[y-1]-sol[y-1], b=grid[y]-sol[y]; be=y-1+(a<0? -a/(b-a):0); beY=y; break; }
+  return {grid,sol,be,beY,esc,gBills,sBills,upkeep,genSum,upSum,units,gridUnit:units>0?r.before/units:0,solarUnit:genSum>0?(r.net+upSum)/genSum:0};
 }
 function drawChart(r,units){
   const m=compare25(r,units), yrs=C.YEARS, W=520,H=240,L=58,R=12,T=14,B=30;
@@ -961,20 +1054,162 @@ function drawChart(r,units){
   if(m.be!=null){ const yb=m.grid[Math.floor(m.be)]+(m.grid[Math.ceil(m.be)]-m.grid[Math.floor(m.be)])*(m.be%1);
     s+=`<circle cx="${x(m.be)}" cy="${yv(yb)}" r="5" fill="var(--sun)" stroke="var(--surface)" stroke-width="2"/><text x="${x(m.be)+8}" y="${yv(yb)+16}" style="fill:var(--ink)">break-even ${m.be.toFixed(1)}y</text>`; }
   $("chart").innerHTML=s;
-  const saved=m.grid[yrs]-m.sol[yrs];
-  const k=(cls,key,v,sub)=>`<div class="${cls}"><span class="k">${key}</span><span class="v">${v}</span><span class="s">${sub}</span></div>`;
-  $("cmp-kpis").innerHTML = r.kw>0 ? [
-      k("grid","Only the grid",inr(m.grid[yrs]),`about ₹${m.gridUnit.toFixed(2)} a unit today`),
-      k("sol","With solar",inr(m.sol[yrs]),`about ₹${m.solarUnit.toFixed(2)} a unit from your roof`),
-      k("save","You save",inr(Math.max(saved,0)),"over 25 years"),
-      k("be","Break-even",m.be!=null?`year ${m.be.toFixed(1)}`:"not within 25 y","then solar is pure saving")].join("")
-    : k("grid","Only the grid",inr(m.grid[yrs]),"over 25 years");
+  const k=(cls,key,v,sub)=>`<button type="button" class="${cls}" data-why="c-${cls}" aria-controls="why-cmp" aria-expanded="${whyShown("c-"+cls)}"><span class="k">${key}</span><span class="v">${v}</span><span class="s">${sub}</span></button>`;
+  const box=$("cmp-kpis"), fw=box.contains(document.activeElement)&&document.activeElement.dataset.why;   // keep focus across re-renders
+  box.innerHTML = r.kw>0 ? [
+      k("grid","Only the grid",CMP_TILE.grid(m),`about ₹${m.gridUnit.toFixed(2)} a unit today`),
+      k("sol","With solar",CMP_TILE.sol(m),`about ₹${m.solarUnit.toFixed(2)} a unit from your roof`),
+      k("save","You save",CMP_TILE.save(m),"over 25 years"),
+      k("be","Break-even",CMP_TILE.be(m),"then solar is pure saving")].join("")
+    : k("grid","Only the grid",CMP_TILE.grid(m),"over 25 years");
+  if(fw){ const b=box.querySelector(`[data-why="${fw}"]`); if(b) b.focus({preventScroll:true}); }
   const rows=[1,5,10,15,20,25].map(y=>`<tr><td>Year ${y}</td><td class="g">${inr(m.grid[y])}</td><td class="s">${r.kw>0?inr(m.sol[y]):"—"}</td><td class="v">${r.kw>0?(m.grid[y]-m.sol[y]>=0?"":"−")+inr(Math.abs(m.grid[y]-m.sol[y])):"—"}</td></tr>`).join("");
   $("cmp-t").innerHTML=`<thead><tr><th>Total spent by</th><th>Only grid</th><th>With solar</th><th>Saved</th></tr></thead><tbody>${rows}</tbody>`;
   $("esc-o").textContent=(m.esc*100).toFixed(1).replace(/\.0$/,"")+"%";
   $("chart-cap").textContent = r.kw>0 ? `"With solar" starts at your ${inr(r.net)} upfront cost and adds what's left of your bill plus upkeep. Bills rise ${(m.esc*100).toFixed(1).replace(/\.0$/,"")}% a year.` : "";
+  return m;
 }
+const CMP_TILE={grid:m=>inr(m.grid[C.YEARS]), sol:m=>inr(m.sol[C.YEARS]), save:m=>inr(Math.max(m.grid[C.YEARS]-m.sol[C.YEARS],0)),
+  be:m=>m.be!=null?`year ${m.be.toFixed(1)}`:"not within 25 y"};
 function niceStep(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); for(const m of [1,2,2.5,5,10]) if(m*p>=v) return m*p; return 10*p; }
+
+// ---------- "How was this calculated?": each tile's formula filled with this home's numbers ----------
+// Reads only the values render() and drawChart() already computed (window.__lastR and its .cmp), never its own.
+const WHY_MAIN=["kw","gen","gross","sub","bill","pb","co2"], WHY_CMP=["c-grid","c-sol","c-save","c-be"];
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+let whyOpen=new Set();
+function whyShown(k){ return whyOpen.has(k); }
+const nf=(x,d=2,min=0)=>(+x).toLocaleString("en-IN",{minimumFractionDigits:min,maximumFractionDigits:d});
+const rs2=x=>"₹"+nf(x,2,2);
+// Round amounts to paise so the shown lines add up exactly to the shown total (largest remainder)
+function paise(amts){
+  const p=amts.map(a=>a*100), fl=p.map(Math.floor), left=Math.round(p.reduce((s,x)=>s+x,0))-fl.reduce((s,x)=>s+x,0);
+  p.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).slice(0,Math.max(left,0)).forEach(([,i])=>fl[i]++);
+  return fl.map(x=>x/100);
+}
+// steps that are only a <small> note go under the numbered list, not in it
+const sect=(k,title,res,steps)=>{ steps=steps.filter(Boolean); const note=x=>x.startsWith("<small>");
+  return `<section class="why-s" data-k="${k}"><h3>${title}<span class="res">${res}</span></h3><ol>${steps.filter(x=>!note(x)).map(x=>`<li>${x}</li>`).join("")}</ol>${steps.filter(note).map(x=>`<p class="why-n">${x}</p>`).join("")}</section>`; };
+const kwf=x=>nf(x,2,1);
+const F=t=>`<span class="f">${t}</span>`;
+function slabName(l){ if(l.own) return "Your rate"; if(l.flat) return l.hi==null?"Whole bill, top band":`Whole bill (up to ${l.hi} units)`;
+  return l.hi==null?`Above ${l.lo} units`:`${l.lo}–${l.hi} units`; }
+function billTable(b){
+  const rows=b.energy.map(l=>[slabName(l),`${nf(l.units)} × ₹${l.rate}`,l.amt]);
+  b.fixed.forEach(f=>rows.push(["Fixed charge",escH(f.what),f.amt]));
+  if(b.extraRate) rows.push(["Other per-unit charge",`${nf(b.u)} × ₹${b.extraRate}`,b.extra]);
+  const shown=paise(rows.map(x=>x[2])), tot=shown.reduce((s,x)=>s+x,0);
+  const body=rows.length?rows.map((x,i)=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${rs2(shown[i])}</td></tr>`).join(""):`<tr><td colspan="2">Nothing to pay</td><td>₹0.00</td></tr>`;
+  return `<div class="why-tw"><table class="why-t"><tbody>${body}<tr class="tot"><td colspan="2">Total</td><td>${rs2(tot)}</td></tr></tbody></table></div>`;
+}
+function boardName(){ const t=tariff(); return hasRates(t)?`${escH(t.d)} FY ${escH(t.fy)}`:`your own rate of ₹${ownRate()}/unit`; }
+const WHY={
+  kw(r){
+    const s=r.size, panels=Math.max(Math.ceil(r.kw/C.PANEL_KW),0), sq=roofUnit==="sqft";
+    if(s.src==="pv-unknown") return sect("kw","System size",TILE.kw(r),[`Sized by the SunSense server for the PVGIS run → <b>${TILE.kw(r)}</b>`]);
+    return sect("kw","System size",TILE.kw(r),[
+      r.byBill&&`Your ${inr(r.bill)} bill works out to ${nf(s.units,1)} units a month (see Monthly bill).`,
+      `Size for your use: ${F(`${nf(s.units,1)} units ÷ (30 days × ${nf(s.psh)} sun-hours × 0.8) = ${kwf(s.need)} kW`)}`,
+      `Roof limit: ${F(`${sq?`${roofTxt(s.roof)} = ${nf(s.roof)} m²`:`${nf(s.roof,1)} m²`} ÷ 10 m² per kW = ${kwf(s.cap)} kW`)}`,
+      `Take the smaller: ${F(`${kwf(s.raw)} kW`)} (${s.need>s.cap?"your roof limits it":"your use decides it"})`,
+      `Round to the nearest 0.05 kW → <b>${TILE.kw(r)}</b>`,
+      r.kw>0&&`Panels: ${F(`${r.kw} kW ÷ 0.54 kW per 540 W panel = ${nf(r.kw/C.PANEL_KW)} → ${panels}`)} (rounded up)`,
+      `<small>${s.src==="pv"?"Sun-hours for your roof from NASA POWER, the same the server used to size the PVGIS run.":"Sun-hours from the Sunlight slider. 0.8 covers inverter, wiring, heat and dust losses."}</small>`]);
+  },
+  gen(r){
+    if(r.monthly&&r.pvgis){ const p=r.pvgis, ms=r.monthly, tot=ms.reduce((a,x)=>a+x,0);
+      return sect("gen","Yearly generation",TILE.gen(r)+" kWh",[
+        `This comes from the <b>PVGIS simulation</b>, not the formula: a ${r.kw} kW system at ${p.tilt!=null?p.tilt+"° tilt":"the best tilt"}${p.azimuth!=null?`, facing ${faceName(p.azimuth)}`:""}, using hourly satellite sunlight for this spot (2005–2023) and PVGIS's own losses.`,
+        `Month by month (kWh): ${F(ms.map((x,i)=>`${MON[i]} ${fmt(x)}`).join(" · "))}`,
+        `PVGIS yearly total → <b>${TILE.gen(r)} kWh</b>${Math.round(tot)!==Math.round(r.gen)?` <small>(the rounded months add to ${fmt(tot)})</small>`:""}`,
+        `<small>For comparison the quick formula gives ${F(`${r.kw} kW × ${nf(r.est.psh)} × 365 × 0.8 = ${fmt(r.est.gen)} kWh`)}.</small>`]); }
+    return sect("gen","Yearly generation",TILE.gen(r)+" kWh",[
+      `${F(`${r.kw} kW × ${nf(r.size.psh)} sun-hours × 365 days × 0.8 = ${nf(r.gen,1)} kWh`)} → <b>${TILE.gen(r)} kWh</b>`,
+      `<small>Quick estimate from the formula. The PVGIS simulation replaces it when it's available.</small>`]);
+  },
+  gross(r){ return sect("gross","Cost before subsidy",TILE.gross(r),[`${F(`${r.kw} kW × ₹55,000 per kW installed =`)} <b>${TILE.gross(r)}</b>`]); },
+  sub(r){
+    const p=r.subP, rate=x=>"₹"+fmt(x);
+    if(p.none) return sect("sub","Subsidy",TILE.sub(r),[type!=="on-grid"?"PM Surya Ghar pays only for on-grid systems, so off-grid gets <b>₹0</b>.":"No system yet, so <b>₹0</b>."]);
+    const s1=Math.round(p.k1*p.a), s2=Math.round(p.k2*p.b);      // whole rupees: kW come in 0.05 steps
+    return sect("sub","Subsidy",TILE.sub(r),[
+      p.special&&"Special-category state: rates are 10% higher (₹33,000 and ₹19,800 per kW, cap ₹85,800).",
+      `First 2 kW: ${F(`${rate(p.a)} × ${nf(p.k1)} kW = ${inr(s1)}`)}`,
+      p.k2>0?`3rd kW: ${F(`${rate(p.b)} × ${nf(p.k2)} kW = ${inr(s2)}`)}`:"3rd kW: none (the system is 2 kW or less)",
+      r.kw>3&&"Above 3 kW: no subsidy",
+      `${F(`${inr(s1)} + ${inr(s2)} = ${inr(s1+s2)}`)}, capped at ${rate(p.cap)} → <b>${TILE.sub(r)}</b>`]);
+  },
+  bill(r){
+    const after=r.billAfter, pvm=after.length===12, ex=r.gen/12, u0=nf(r.billBefore.u,1);
+    const out=[
+      r.byBill&&`<b>Bill → units first.</b> You entered ${inr(r.bill)}. SunSense finds the monthly units whose energy + fixed charge on ${boardName()} come to that: ${F(`${u0} units`)}. The table below checks it.`,
+      `<b>Before solar</b>: ${u0} units on ${boardName()}${hasRates(tariff())?`, ${r.load} kW sanctioned load assumed`:""}${billTable(r.billBefore)}`];
+    if(pvm){ const sh=paise(after.map(b=>b.total)), tot=sh.reduce((a,x)=>a+x,0);
+      out.push(`<b>After solar</b>: each month you buy only what PVGIS says your panels don't cover (net metering, top slab first):`+
+        `<div class="why-tw"><table class="why-t"><tbody>${after.map((b,i)=>`<tr><td>${MON[i]}</td><td>${u0} − ${fmt(r.monthly[i])} ${b.u>0?`= ${nf(b.u,1)} units`:"→ 0 units"}</td><td>${rs2(sh[i])}</td></tr>`).join("")}`+
+        `<tr class="tot"><td colspan="2">Average: ${rs2(tot)} ÷ 12</td><td>${rs2(r.after)}</td></tr></tbody></table></div>`); }
+    else out.push(`<b>After solar</b>: solar makes ${F(`${fmt(r.gen)} ÷ 12 = ${nf(ex,1)} units`)} a month, so you buy ${F(`${u0} − ${nf(ex,1)} = ${nf(after[0].u,1)} units`)}${r.billBefore.u-ex<=0?" (extra units aren't paid for)":""}${billTable(after[0])}`);
+    out.push(`${F(`${rs2(r.before)} → ${rs2(r.after)}`)}, rounded → <b>${TILE.bill(r)}</b>`);
+    return sect("bill","Monthly bill",TILE.bill(r),out);
+  },
+  pb(r){
+    return sect("pb","Payback",TILE.pb(r)+" years",[
+      `Net cost: ${F(`${inr(r.gross)} − ${inr(r.sub)} = ${inr(r.net)}`)}`,
+      `Yearly savings: ${F(`${rs2(r.before)} − ${rs2(r.after)} = ${rs2(r.before-r.after)} a month × 12 = ${inr(r.save)}`)}`,
+      r.payback==null?"No savings, so it never pays back → <b>—</b>":`${F(`${inr(r.net)} ÷ ${inr(r.save)} = ${nf(r.payback,3,3)}`)} → <b>${TILE.pb(r)} years</b>`,
+      "<small>Simple payback at today's prices. The Break-even card adds yearly price rises, panel ageing and upkeep.</small>"]);
+  },
+  co2(r){ return sect("co2","CO₂ avoided",TILE.co2(r)+" a year",[
+    `${F(`${fmt(r.gen)} kWh × 0.82 kg per kWh = ${fmt(r.co2)} kg`)} → <b>${TILE.co2(r)}</b>`,
+    "<small>0.82 kg per kWh is the CEA's grid emission baseline for India.</small>"]); },
+  "c-grid"(r){ const m=r.cmp, Y=C.YEARS;
+    return sect("c-grid","Only the grid",CMP_TILE.grid(m),[
+      `Year 1: ${F(`${rs2(r.before)} × 12 = ${rs2(m.gBills[1])}`)}`,
+      `Bills rise ${nf(m.esc*100,1)}% a year: ${F(`year n = ${rs2(m.gBills[1])} × ${nf(1+m.esc,3)}^(n−1)`)}`,
+      `${F(`${rs2(m.gBills[1])} + ${rs2(m.gBills[2])} + … + ${rs2(m.gBills[Y])} = ${rs2(m.grid[Y])}`)} → <b>${CMP_TILE.grid(m)}</b>`,
+      m.units>0&&`Per unit today: ${F(`${rs2(r.before)} ÷ ${nf(m.units,1)} units = ₹${m.gridUnit.toFixed(2)}`)}`]); },
+  "c-sol"(r){ const m=r.cmp, Y=C.YEARS, bills=m.sBills.reduce((a,x)=>a+x,0), [p1,p2,p3]=paise([r.net,bills,m.upSum]);
+    return sect("c-sol","With solar",CMP_TILE.sol(m),[
+      `Upfront, after subsidy: ${F(rs2(p1))}`,
+      `What's left of your bill over 25 years (bills rise ${nf(m.esc*100,1)}% a year, panels lose 0.5% a year): ${F(rs2(p2))}`,
+      `Upkeep, 1% of ${inr(r.gross)} a year: ${F(`${rs2(m.upkeep)} × ${Y} = ${rs2(p3)}`)}`,
+      `${F(`${rs2(p1)} + ${rs2(p2)} + ${rs2(p3)} = ${rs2(p1+p2+p3)}`)} → <b>${CMP_TILE.sol(m)}</b>`,
+      `Per unit from your roof: ${F(`(${inr(r.net)} + ${rs2(m.upSum)}) ÷ ${fmt(m.genSum)} kWh over 25 years = ₹${m.solarUnit.toFixed(2)}`)}`]); },
+  "c-save"(r){ const m=r.cmp, Y=C.YEARS, d=m.grid[Y]-m.sol[Y];
+    return sect("c-save","You save",CMP_TILE.save(m),[
+      `${F(`${rs2(m.grid[Y])} − ${rs2(m.sol[Y])} = ${d<0?"−":""}${rs2(Math.abs(d))}`)} → <b>${CMP_TILE.save(m)}</b>${d<0?" (shown as ₹0: solar costs more here)":""}`]); },
+  "c-be"(r){ const m=r.cmp;
+    if(m.be==null) return sect("c-be","Break-even",CMP_TILE.be(m),["Solar's running total stays above the grid's for all 25 years → <b>not within 25 y</b>"]);
+    const y=m.beY, a=m.grid[y-1]-m.sol[y-1], b=m.grid[y]-m.sol[y];
+    return sect("c-be","Break-even",CMP_TILE.be(m),[
+      `End of year ${y-1}: solar is ${F(rs2(-a))} behind (grid ${rs2(m.grid[y-1])}, solar ${rs2(m.sol[y-1])})`,
+      `End of year ${y}: solar is ${F(rs2(b))} ahead (grid ${rs2(m.grid[y])}, solar ${rs2(m.sol[y])})`,
+      `Straight line between them: ${F(`${y-1} + ${rs2(-a)} ÷ (${rs2(-a)} + ${rs2(b)}) = ${nf(m.be,3,3)}`)} → <b>${CMP_TILE.be(m)}</b>`]); },
+};
+function whyKeys(){ return [...WHY_MAIN,...WHY_CMP.filter(k=>$("cmp-kpis").querySelector(`[data-why="${k}"]`))]; }
+function renderWhy(){
+  const r=window.__lastR; if(!r) return;
+  const keys=whyKeys();                         // cards hidden for now (no system) keep their open state for when they return
+  document.querySelectorAll("[data-why]").forEach(b=>b.setAttribute("aria-expanded",String(whyShown(b.dataset.why))));
+  const all=keys.every(whyShown), a=$("why-all");
+  a.setAttribute("aria-expanded",String(all)); a.textContent=all?"Hide all calculations":"Show all calculations";
+  for(const [id,list] of [["why",WHY_MAIN],["why-cmp",WHY_CMP]]){
+    const el=$(id), ks=list.filter(k=>whyShown(k)&&keys.includes(k)); el.hidden=!ks.length;
+    el.innerHTML=ks.map(k=>WHY[k](r)).join("");
+  }
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-why],#why-all"); if(!t) return;
+  let k=null;
+  if(t.id==="why-all"){ const keys=whyKeys(); whyOpen = keys.every(whyShown) ? new Set() : new Set(keys); }
+  else { k=t.dataset.why;
+    if(whyOpen.size>1){ if(whyOpen.has(k)) whyOpen.delete(k); else whyOpen.add(k); }     // several open: toggle just this one
+    else whyOpen = whyOpen.has(k) ? new Set() : new Set([k]); }                         // otherwise one at a time
+  renderWhy();
+  const s=k&&whyOpen.has(k)&&document.querySelector(`.why-s[data-k="${k}"]`);
+  if(s) s.scrollIntoView({block:"nearest",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+});
+
 
 // ---------- Custom dropdowns (native <select> kept hidden for value, label and change events) ----------
 const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
@@ -1472,7 +1707,7 @@ const FALLBACK_FAIL={why:"Our server couldn't get an answer from PVGIS in time."
 
 // ---------- PVGIS simulation through the SunSense API (PVGIS blocks direct browser calls) ----------
 let pv=null, pvKey="", pvTimer=null, pvBusy=false, pvTilt=null, pvAz=null, battery=null;
-function inputsNow(){ const raw=num("use",byBill?1e6:1e5); return {units:byBill?unitsFromBill(raw):raw, roof:num("roof",1e4), type}; }
+function inputsNow(){ const raw=num("use",byBill?1e6:1e5); return {units:byBill?unitsFromBill(raw):raw, roof:roofArea(), type}; }
 function detailKey(){ const i=inputsNow(); return JSON.stringify([here&&here.lat.toFixed(5),here&&here.lng.toFixed(5),Math.round(i.units),i.roof,i.type,pvTilt,pvAz,battery]); }
 async function runDetail(){
   if(!API_URL||!here) return null;
@@ -2026,7 +2261,7 @@ $("gps").onclick=()=>{
 
 // ---------- calculate → results ----------
 function currentResult(){
-  const psh=+$("psh").value, raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=num("roof",1e4);
+  const psh=+$("psh").value, raw=num("use",byBill?1e6:1e5), units=byBill?unitsFromBill(raw):raw, roof=roofArea();
   return {psh,units,roof,r:calculate(units,roof,psh,type)};
 }
 function reveal(){
@@ -2048,7 +2283,7 @@ $("calc-btn").onclick=async()=>{
   const {psh,units,roof,r}=currentResult();
   const steps=[
     ["Reading sunlight for your roof",`${psh.toFixed(2).replace(/0$/,"")} peak sun hours a day`],
-    ["Sizing your system",`${Math.round(units)} units a month · ${roof} m² roof → ${r.kw} kW`],
+    ["Sizing your system",`${Math.round(units)} units a month · ${roofTxt(roof)} roof → ${r.kw} kW`],
     ["Applying the PM Surya Ghar subsidy",`${inr(r.sub)} off ${inr(r.gross)}`],
     ["Projecting 25 years of savings", r.payback!=null ? `Pays back in about ${r.payback.toFixed(1)} years` : "Working out your savings"]];
   const per=reduce?0:600;
