@@ -6,6 +6,7 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: one continuous night sky with Earth (transparent Cesium canvas) over a CSS starfield.
@@ -72,6 +73,9 @@ body.pinning #globe{cursor:crosshair}
 .loading{position:fixed;top:50%;left:calc(50% + var(--gx));transform:translate(-50%,-50%);font:500 13px var(--f-mono);color:var(--muted);
   z-index:1;pointer-events:none;text-align:center;max-width:34ch;transition:left 1.2s var(--ease)}
 body.fly .loading{left:50%}
+.loading::before{content:"";position:absolute;left:50%;top:50%;z-index:-1;width:min(62vmin,560px);aspect-ratio:1;border-radius:50%;
+  transform:translate(-50%,-50%);background:radial-gradient(circle at 36% 34%,#1d3d70,#0b1834 58%,#050b1d);box-shadow:0 0 70px 6px rgba(96,150,255,.16)}
+.loading.fail::before{display:none}
 #credits{position:fixed;right:14px;top:10px;z-index:3;font:400 10px/1.35 var(--f-body);color:var(--faint);max-width:min(560px,60vw);text-align:right}
 #credits *{color:inherit!important;font-size:10px!important}
 #credits img{max-height:16px;vertical-align:middle}
@@ -748,8 +752,8 @@ body.st-mini .help,body.st-mini .help-open{left:calc(50% + 220px);max-width:min(
 </section>
 
 <script>
-// Runs before Cesium.js (which blocks the main script below while it downloads), so the card and logo
-// are painted in their final place and don't jump when the main script starts: no layout shift.
+// Places the card and logo before the first paint, so they're painted in their final place and don't
+// jump when the main script starts (which is after the first paint): no layout shift.
 const $=id=>document.getElementById(id);
 const narrow=()=>innerWidth<=860;
 let cardState="search";
@@ -796,9 +800,18 @@ document.body.classList.add("st-search","landing");
 place(true);
 </script>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/";</script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
-<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
 <script>
+// Startup runs once the page has painted its first content, so that paint never waits on startup work
+// or the downloads it begins (tariffs, yield grid, extra font subsets); Cesium loads after that.
+// Background tabs never paint, so there it starts at once, and a timeout covers anything else.
+(start=>{
+  let started=false; const go=()=>{ if(!started){ started=true; setTimeout(start,0); } };
+  if(document.visibilityState==="hidden") return go();
+  try{ new PerformanceObserver((l,o)=>{ if(l.getEntriesByName("first-contentful-paint").length){ o.disconnect(); go(); } })
+         .observe({type:"paint",buffered:true}); }
+  catch{ requestAnimationFrame(go); }
+  setTimeout(go,2500);
+})(()=>{
 // Set this to the ApiUrl output from `sam deploy` to use live sunlight data.
 const LIVE_API = "https://lzgu0g309j.execute-api.ap-south-1.amazonaws.com/calculate";   // paste the ApiUrl from `sam deploy` here
 const API_URL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "/api/calculate" : LIVE_API;
@@ -1148,7 +1161,27 @@ const PITCH=-38, RANGE=1140;              // final view: 700 m up, 38° down
 let viewer=null, here=null, spinning=!reduce, orbit=null, searchSeq=0, pinEntity=null, pinning=false, pinMoved=false;
 const el=$("globe");
 
+// Cesium (~4 MB, seconds of parsing on phones) loads once the page has loaded and gone idle,
+// so the search and calculator paint and respond straight away.
+// The SRI hashes are filled in by tools/build_index.py.
+const CESIUM_SRI={js:"__CESIUM_SRI_JS__",css:"__CESIUM_SRI_CSS__"};
+function loadCesium(){
+  const add=(tag,attrs)=>new Promise((res,rej)=>{
+    const e=Object.assign(document.createElement(tag),attrs,{crossOrigin:"anonymous",onload:res,onerror:()=>rej(new Error(`${attrs.src||attrs.href} didn't load`))});
+    document.head.appendChild(e);
+  });
+  const sri=h=>/^sha\d+-/.test(h)?{integrity:h}:{};
+  add("link",{rel:"stylesheet",href:CESIUM_BASE_URL+"Widgets/widgets.css",...sri(CESIUM_SRI.css)}).catch(()=>{});   // cosmetic only
+  return add("script",{src:CESIUM_BASE_URL+"Cesium.js",...sri(CESIUM_SRI.js)});
+}
+const afterLoad=()=>new Promise(r=>{
+  const idle=()=>"requestIdleCallback" in window ? requestIdleCallback(()=>r(),{timeout:1500}) : setTimeout(r,200);
+  document.readyState==="complete" ? idle() : addEventListener("load",idle,{once:true});
+});
+
 const cesiumReady=(async()=>{
+  await afterLoad();
+  await loadCesium();
   if(typeof Cesium==="undefined") throw new Error("Cesium didn't load");
   Cesium.Ion.defaultAccessToken=CESIUM_TOKEN;
   const v=new Cesium.Viewer(el,{globe:false,baseLayer:false,baseLayerPicker:false,geocoder:false,homeButton:false,
@@ -1187,7 +1220,7 @@ const cesiumReady=(async()=>{
 })();
 
 cesiumReady.then(v=>{ viewer=v; $("g-loading").remove(); })
-  .catch(e=>{ console.warn(e);
+  .catch(e=>{ console.warn(e); $("g-loading").classList.add("fail");
     $("g-loading").textContent = location.protocol==="file:" ? "Open this page through a web server to see the 3D Earth."
       : "The 3D Earth couldn't load here. Pincode lookup and the calculator still work."; });
 
@@ -2144,4 +2177,5 @@ $("where").addEventListener("input",e=>{ const v=e.target.value.trim(); if(/^\d/
 
 render();
 go("search");
+});
 </script>

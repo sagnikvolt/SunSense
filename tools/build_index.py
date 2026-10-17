@@ -1,5 +1,6 @@
 """Build frontend/index.html from src/app.html: adds the page head, Subresource Integrity
-for Cesium, and a Content Security Policy that allows inline scripts only by SHA-256 hash.
+for Cesium (loaded by the page script once the page has loaded), and a Content Security Policy that
+allows inline scripts only by SHA-256 hash.
 
     python tools/build_index.py src/app.html frontend/index.html
 """
@@ -8,11 +9,9 @@ src, out = sys.argv[1], sys.argv[2]
 s = open(src, encoding="utf-8").read()
 SRI_JS  = "sha384-D1oR8FyBDsJWkPeydGJTh8nJg5/++9sqchzJuu+oGQPmgbwu3aJmoVj3BTowr6t6"
 SRI_CSS = "sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp"
-s = s.replace('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">',
-              f'<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" integrity="{SRI_CSS}" crossorigin="anonymous">')
-s = s.replace('<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>',
-              f'<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js" integrity="{SRI_JS}" crossorigin="anonymous"></script>')
-assert s.count('integrity=') == 2
+assert s.count('"__CESIUM_SRI_JS__"') == 1 and s.count('"__CESIUM_SRI_CSS__"') == 1
+assert 'cesium@1.145.0' in s   # the hashes above are for this exact version
+s = s.replace('"__CESIUM_SRI_JS__"', f'"{SRI_JS}"').replace('"__CESIUM_SRI_CSS__"', f'"{SRI_CSS}"')
 # hash every inline <script> so the CSP can forbid all other inline code
 hashes = []
 for m in re.finditer(r'<script>(.*?)</script>', s, re.S):
